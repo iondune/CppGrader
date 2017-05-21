@@ -27,6 +27,24 @@ vector<string> SeparateLines(string const & str)
 	return Lines;
 }
 
+string ReadAsString(string const & FileName)
+{
+	std::ifstream FileHandle(FileName);
+	std::string String;
+
+	FileHandle.seekg(0, std::ios::end);
+	String.reserve((uint) FileHandle.tellg());
+	FileHandle.seekg(0, std::ios::beg);
+
+	String.assign((std::istreambuf_iterator<char>(FileHandle)), std::istreambuf_iterator<char>());
+
+	return String;
+}
+
+string Cat(string const & FileName, ofstream & File)
+{
+	File << ReadAsString(FileName);
+}
 
 template <typename... Args>
 void required_command(std::initializer_list<string> const & cmd, Args&&... args)
@@ -36,7 +54,7 @@ void required_command(std::initializer_list<string> const & cmd, Args&&... args)
 	auto retcode = p.poll();
 	if (retcode > 0)
 	{
-		throw sp::CalledProcessError("Command failed : Non zero retcode");
+		throw sp::CalledProcessError("Command failed: Non zero retcode");
 	}
 	cout << res.first.buf.data();
 }
@@ -49,7 +67,7 @@ string required_command_output(std::initializer_list<string> const & cmd, Args&&
 	auto retcode = p.poll();
 	if (retcode > 0)
 	{
-		throw sp::CalledProcessError("Command failed : Non zero retcode");
+		throw sp::CalledProcessError("Command failed: Non zero retcode");
 	}
 	return res.first.buf.data();
 }
@@ -59,7 +77,7 @@ string const ExecDirectory = "/home/ian";
 string const StudentsDirectory = "/home/ian/students";
 string const SiteDirectory = "/var/www/html/grades";
 string const TemplateDirectory = "/home/ian/csc473-gradeserver/html";
-
+// string const StudentHTMLDirectory="${site_directory}/${student}/${assignment}/"
 
 class HTMLBuilder
 {
@@ -71,45 +89,74 @@ public:
 
 	}
 
+	void header_info(string const & student, string const & assignment)
+	{
+		Cat(TemplateDirectory + "/top1.html", File);
+		cout << "<title>[" << student << "] CPE 473 Grade Results</title>" << endl;
+		Cat(TemplateDirectory + "/top2.html", File);
+		cout << "<h1>[CPE 473] Program (" << assignment << ") Grade Results</h1>" << endl;
+
+		cout << "<p>Student: " << student << "</p>" << endl;
+
+		cout << "<p>Last Run: " << required_command_output({"date"}, sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}}))) << "</p>" << endl;
+		cout << "<p><a href=\"../\">&lt;&lt; Back to All Grades</a></p>" << endl;
+
+
+		cout << "<p><span>Current Commit:</span></p>" << endl;
+		cout << "<pre><code>";
+		cout << required_command_output({"git", "log", "-n", "1", "--date=local", "HEAD"}) << endl;
+		cout << "</code></pre>" << endl;
+	}
+
+	void directory_listing()
+	{
+		modal_window_start("file_view", "Directory Structure", "primary");
+		cout << "<pre><code>";
+		cout << required_command_output({"tree", "--filelimit", "32"}) << endl;
+		cout << "</code></pre>" << endl;
+		modal_window_end();
+	}
+
 	void cleanup()
 	{
-		// cat "$html_directory/bottom.html" >> "$student_site"
-		// mv "${student_html_directory}/temp.html" "${student_html_directory}/index.html"
+		Cat(HTMLDirectory + "/bottom.html", File);
+		required_command({"mv", HTMLDirectory + "/temp.html", HTMLDirectory + "/index.html"});
 	}
 
-	void collapse_button()
+	void collapse_button(string const & id)
 	{
-		// echo '<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#'$1'" aria-expanded="false" aria-controls="'$1'">' >> "$student_site"
-		// echo 'Show/Hide' >> "$student_site"
-		// echo '</button>' >> "$student_site"
+		File << "<button class=\"btn btn-primary\" type=\"button\" data-toggle=\"collapse\" data-target=\"#" << id << "\" aria-expanded=\"false\" aria-controls=\"" << id << "\">" << endl;
+		File << "Show/Hide" << endl;
+		File << "</button>" << endl;
 	}
 
-	void modal_window_start()
+	void modal_window_start(string const & id, string const & button_label, string const & btn_class)
 	{
-		// echo '<button type="button" class="btn btn-'$3' btn-sm" data-toggle="modal" data-target="#'$1'">' >> "$student_site"
-		// echo "$2" >> "$student_site"
-		// echo '</button>' >> "$student_site"
-		// echo '<div class="modal fade" id="'$1'" tabindex="-1" role="dialog">' >> "$student_site"
-		// echo '<div class="modal-dialog" role="document">' >> "$student_site"
-		// echo '<div class="modal-content">' >> "$student_site"
-		// echo '<div class="modal-header">' >> "$student_site"
-		// echo '<button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>' >> "$student_site"
-		// echo '<h4 class="modal-title">'$2'</h4>' >> "$student_site"
-		// echo '</div>' >> "$student_site"
-		// echo '<div class="modal-body">' >> "$student_site"
+		File << "<button type=\"button\" class=\"btn btn-" << btn_class << " btn-sm\" data-toggle=\"modal\" data-target=\"#" << id << "\">" << endl;
+		File << button_label << endl;
+		File << "</button>" << endl;
+		File << "<div class=\"modal fade\" id=\"" << id << "\" tabindex=\"-1\" role=\"dialog\">" << endl;
+		File << "<div class=\"modal-dialog\" role=\"document\">" << endl;
+		File << "<div class=\"modal-content\">" << endl;
+		File << "<div class=\"modal-header\">" << endl;
+		File << "<button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-label=\"Close\">&times;</button>" << endl;
+		File << "<h4 class=\"modal-title\">" << button_label << "</h4>" << endl;
+		File << "</div>" << endl;
+		File << "<div class=\"modal-body\">" << endl;
 	}
 
 	void modal_window_end()
 	{
-		// echo '</div>' >> "$student_site"
-		// echo '<div class="modal-footer">' >> "$student_site"
-		// echo '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' >> "$student_site"
-		// echo '</div>' >> "$student_site"
-		// echo '</div>' >> "$student_site"
-		// echo '</div>' >> "$student_site"
-		// echo '</div>' >> "$student_site"
+		File << "</div>" << endl;
+		File << "<div class=\"modal-footer\">" << endl;
+		File << "<button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>" << endl;
+		File << "</div>" << endl;
+		File << "</div>" << endl;
+		File << "</div>" << endl;
+		File << "</div>" << endl;
 	}
 
+	string HTMLDirectory;
 	ofstream File;
 
 };
