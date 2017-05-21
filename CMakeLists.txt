@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-# Name of the project
 project(CppGrader)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
