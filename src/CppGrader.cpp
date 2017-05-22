@@ -41,7 +41,12 @@ string ReadAsString(string const & FileName)
 	return String;
 }
 
-string Cat(string const & FileName, ofstream & File)
+vector<string> ReadAsLines(string const & FileName)
+{
+	return SeparateLines(ReadAsString(FileName));
+}
+
+string Cat(string const & FileName, ostream & File)
 {
 	File << ReadAsString(FileName);
 }
@@ -49,7 +54,7 @@ string Cat(string const & FileName, ofstream & File)
 template <typename... Args>
 void required_command(std::initializer_list<string> const & cmd, Args&&... args)
 {
-	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);
+	auto p = sp::Popen(cmd, sp::output{sp::PIPE}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
 	auto res = p.communicate();
 	auto retcode = p.poll();
 	if (retcode > 0)
@@ -84,10 +89,9 @@ class HTMLBuilder
 
 public:
 
-	HTMLBuilder(string const & FileName)
-	{
-
-	}
+	HTMLBuilder(ostream & file)
+		: File(file)
+	{}
 
 	void header_info(string const & student, string const & assignment)
 	{
@@ -112,12 +116,13 @@ public:
 	{
 		modal_window_start("file_view", "Directory Structure", "primary");
 		cout << "<pre><code>";
-		cout << required_command_output({"tree", "--filelimit", "32"}) << endl;
+		// required_command({"tree", "--filelimit", "32"});
+		cout << required_command_output({"tree", "--filelimit", "32"});
 		cout << "</code></pre>" << endl;
 		modal_window_end();
 	}
 
-	void cleanup()
+	void cleanup(string const & HTMLDirectory)
 	{
 		Cat(HTMLDirectory + "/bottom.html", File);
 		required_command({"mv", HTMLDirectory + "/temp.html", HTMLDirectory + "/index.html"});
@@ -156,23 +161,12 @@ public:
 		File << "</div>" << endl;
 	}
 
-	string HTMLDirectory;
-	ofstream File;
+	ostream & File;
 
 };
 
-
-int main()
+void DoGitUpdate(string const & assignment)
 {
-	string assignment = "p4";
-
-	fs::current_path(StudentsDirectory + "/idunn01");
-
-	cout << "Current path: " << fs::current_path() << endl;
-	cout << endl;
-
-	fs::current_path("repo");
-
 	cout << "Running git update" << endl;
 	cout << "==================" << endl;
 	required_command({"git", "clean", "-d", "-x", "-f"});
@@ -204,7 +198,7 @@ int main()
 	{
 		if (tag == assignment)
 		{
-		cout << "Tag found, building." << endl;
+			cout << "Tag found, building." << endl;
 			required_command({"git", "checkout", tag});
 			FoundTag = true;
 		}
@@ -221,11 +215,133 @@ int main()
 	cout << "==============" << endl;
 	required_command({"git", "log", "-n", "1", "--date=local", "HEAD"});
 	cout << endl;
+}
 
-	auto build_environment = sp::environment({
-		{ "GLM_INCLUDE_DIR", "/usr/include/glm/" },
-		{ "EIGEN3_INCLUDE_DIR", "/usr/include/eigen3/" }
-	});
+bool IsHidden(fs::path const & p)
+{
+	fs::path::string_type const name = p.filename();
+	return (
+		name != ".." &&
+		name != "." &&
+		name.size() > 0 &&
+		name[0] == '.'
+	);
+}
+
+void CheckForSingleDirectory()
+{
+	int NumFiles = 0;
+	int NumDirectories = 0;
+
+	string directory;
+	for (auto d : fs::directory_iterator("."))
+	{
+		auto p = d.path();
+
+		if (! IsHidden(p))
+		{
+			if (fs::is_directory(p))
+			{
+				NumDirectories += 1;
+				directory = p;
+			}
+			else if (fs::is_regular_file(p))
+			{
+				NumFiles += 1;
+			}
+		}
+	}
+
+	if (NumFiles == 0 && NumDirectories == 1)
+	{
+		cout << "Found single directory (" << directory << "), entering..." << endl;
+		fs::current_path(directory);
+	}
+}
+
+struct EBuildType
+{
+	enum
+	{
+		CMake,
+		Make,
+		Auto
+	};
+};
+
+void GradeStudent(string const & student, string const & assignment)
+{
+	fs::current_path(StudentsDirectory + "/" + student);
+
+	cout << "Current path: " << fs::current_path() << endl;
+	cout << endl;
+
+	fs::current_path("repo");
+	// DoGitUpdate(assignment);
+
+	// auto build_environment = sp::environment({
+	// 	{ "GLM_INCLUDE_DIR", "/usr/include/glm/" },
+	// 	{ "EIGEN3_INCLUDE_DIR", "/usr/include/eigen3/" }
+	// });
+
+	CheckForSingleDirectory();
+
+	int BuildType = EBuildType::Auto;
+
+	for(auto d : fs::directory_iterator("."))
+	{
+		auto p = d.path();
+		if (p.has_filename())
+		{
+			if (p.filename() == "CMakeLists.txt")
+			{
+				BuildType = EBuildType::CMake;
+				cout << "Found CMakeLists.txt, doing CMake build." << endl;
+			}
+			else if (p.filename() == "CMakeLists.txt")
+			{
+				BuildType = EBuildType::Make;
+				cout << "Found CMakeLists.txt, doing Make build." << endl;
+			}
+		}
+	}
+
+	if (BuildType == EBuildType::Auto)
+	{
+		cout << "Found no build files, attempting g++ build." << endl;
+	}
+	cout << endl;
+
+	// HTMLBuilder hb(cout);
+	// hb.header_info(student, assignment);
+	// hb.directory_listing();
+		required_command({"tree"});
+
+}
+
+int main()
+{
+	string assignment = "p4";
+
+	GradeStudent("idunn01", assignment);
+	return 0;
+
+	fs::current_path(StudentsDirectory);
+
+	vector<string> students = ReadAsLines("list");
+
+	cout << "Students" << endl;
+	cout << "========" << endl;
+	for (auto student : students)
+	{
+		cout << student << endl;
+	}
+	cout << endl;
+
+	for (auto student : students)
+	{
+		GradeStudent(student, assignment);
+	}
 
 	return 0;
 }
