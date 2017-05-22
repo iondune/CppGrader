@@ -116,7 +116,6 @@ public:
 	{
 		modal_window_start("file_view", "Directory Structure", "primary");
 		cout << "<pre><code>";
-		// required_command({"tree", "--filelimit", "32"});
 		cout << required_command_output({"tree", "--filelimit", "32"});
 		cout << "</code></pre>" << endl;
 		modal_window_end();
@@ -279,10 +278,10 @@ void GradeStudent(string const & student, string const & assignment)
 	fs::current_path("repo");
 	// DoGitUpdate(assignment);
 
-	// auto build_environment = sp::environment({
-	// 	{ "GLM_INCLUDE_DIR", "/usr/include/glm/" },
-	// 	{ "EIGEN3_INCLUDE_DIR", "/usr/include/eigen3/" }
-	// });
+
+	// HTMLBuilder hb(cout);
+	// hb.header_info(student, assignment);
+	// hb.directory_listing();
 
 	CheckForSingleDirectory();
 
@@ -312,11 +311,21 @@ void GradeStudent(string const & student, string const & assignment)
 	}
 	cout << endl;
 
-	// HTMLBuilder hb(cout);
-	// hb.header_info(student, assignment);
-	// hb.directory_listing();
-		required_command({"tree"});
+	if (BuildType == EBuildType::CMake)
+	{
+		if (! fs::create_directories("build/"))
+		{
+			throw runtime_error("failed to create requisite directories");
+		}
 
+		fs::current_path("build");
+		fs::remove("CMakeCache.txt");
+	}
+
+	// auto build_environment = sp::environment({
+	// 	{ "GLM_INCLUDE_DIR", "/usr/include/glm/" },
+	// 	{ "EIGEN3_INCLUDE_DIR", "/usr/include/eigen3/" }
+	// });
 }
 
 int main()
