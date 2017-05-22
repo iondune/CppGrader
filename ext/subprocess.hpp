@@ -296,7 +296,7 @@ static int read_all(int fd, Buffer& buf) {
       total_bytes_read += rd_bytes;
     } else if (rd_bytes != -1) {
       total_bytes_read += rd_bytes;
-      break;
+      if (rd_bytes == 0) break;
     } else {
       if (total_bytes_read == 0) return -1;
       break;
