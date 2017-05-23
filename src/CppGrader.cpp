@@ -1,85 +1,13 @@
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <experimental/filesystem>
-#include <subprocess.hpp>
+#include "Util.h"
+#include "Process.h"
+#include "FileSystem.h"
 
 using namespace std;
-namespace fs = std::experimental::filesystem;
-namespace sp = subprocess;
-
-
-
-vector<string> SeparateLines(string const & str)
-{
-	vector<string> Lines;
-	istringstream Stream(str);
-	string Line;
-
-	while (getline(Stream, Line))
-	{
-		Lines.push_back(move(Line));
-	}
-
-	return Lines;
-}
-
-string ReadAsString(string const & FileName)
-{
-	std::ifstream FileHandle(FileName);
-	std::string String;
-
-	FileHandle.seekg(0, std::ios::end);
-	String.reserve((uint) FileHandle.tellg());
-	FileHandle.seekg(0, std::ios::beg);
-
-	String.assign((std::istreambuf_iterator<char>(FileHandle)), std::istreambuf_iterator<char>());
-
-	return String;
-}
-
-vector<string> ReadAsLines(string const & FileName)
-{
-	return SeparateLines(ReadAsString(FileName));
-}
-
-string Cat(string const & FileName, ostream & File)
-{
-	File << ReadAsString(FileName);
-}
-
-template <typename... Args>
-void required_command(std::initializer_list<string> const & cmd, Args&&... args)
-{
-	auto p = sp::Popen(cmd, sp::output{sp::PIPE}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
-	auto res = p.communicate();
-	auto retcode = p.poll();
-	if (retcode > 0)
-	{
-		throw sp::CalledProcessError("Command failed: Non zero retcode");
-	}
-	cout << res.first.buf.data();
-}
-
-template <typename... Args>
-string required_command_output(std::initializer_list<string> const & cmd, Args&&... args)
-{
-	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);
-	auto res = p.communicate();
-	auto retcode = p.poll();
-	if (retcode > 0)
-	{
-		throw sp::CalledProcessError("Command failed: Non zero retcode");
-	}
-	return res.first.buf.data();
-}
 
 
 string const ExecDirectory = "/home/ian";
-string const StudentsDirectory = "/home/ian/students";
+string const AllStudentsDirectory = "/home/ian/students";
 string const SiteDirectory = "/var/www/html/grades";
 string const TemplateDirectory = "/home/ian/csc473-gradeserver/html";
 // string const StudentHTMLDirectory="${site_directory}/${student}/${assignment}/"
@@ -164,7 +92,7 @@ public:
 
 };
 
-void DoGitUpdate(string const & assignment)
+string DoGitUpdate(string const & assignment)
 {
 	cout << "Running git update" << endl;
 	cout << "==================" << endl;
@@ -214,17 +142,8 @@ void DoGitUpdate(string const & assignment)
 	cout << "==============" << endl;
 	required_command({"git", "log", "-n", "1", "--date=local", "HEAD"});
 	cout << endl;
-}
 
-bool IsHidden(fs::path const & p)
-{
-	fs::path::string_type const name = p.filename();
-	return (
-		name != ".." &&
-		name != "." &&
-		name.size() > 0 &&
-		name[0] == '.'
-	);
+	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "HEAD"}));
 }
 
 void CheckForSingleDirectory()
@@ -270,13 +189,16 @@ struct EBuildType
 
 void GradeStudent(string const & student, string const & assignment)
 {
-	fs::current_path(StudentsDirectory + "/" + student);
+	string const StudentDirectory = AllStudentsDirectory + "/" + student;
+	string const RepoDirectory = StudentDirectory + "/" + "repo";
 
-	cout << "Current path: " << fs::current_path() << endl;
-	cout << endl;
+	fs::current_path(RepoDirectory);
+	string const CurrentHash = DoGitUpdate(assignment);
 
-	fs::current_path("repo");
-	// DoGitUpdate(assignment);
+	string const ResultsDirectory = StudentDirectory + "/" + "results" + "/" + assignment + "/" + CurrentHash;
+
+	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
+	fs::create_directories(ResultsDirectory);
 
 
 	// HTMLBuilder hb(cout);
@@ -313,13 +235,9 @@ void GradeStudent(string const & student, string const & assignment)
 
 	if (BuildType == EBuildType::CMake)
 	{
-		if (! fs::create_directories("build/"))
-		{
-			throw runtime_error("failed to create requisite directories");
-		}
-
+		fs::create_directories("build/");
 		fs::current_path("build");
-		fs::remove("CMakeCache.txt");
+		RemoveIfExists("CMakeCache.txt");
 	}
 
 	// auto build_environment = sp::environment({
@@ -335,7 +253,7 @@ int main()
 	GradeStudent("idunn01", assignment);
 	return 0;
 
-	fs::current_path(StudentsDirectory);
+	fs::current_path(AllStudentsDirectory);
 
 	vector<string> students = ReadAsLines("list");
 
