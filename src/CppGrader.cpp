@@ -199,6 +199,11 @@ void GradeStudent(string const & student, string const & assignment)
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
+	if (fs::is_regular_file(ResultsDirectory + "/" + "grading_done"))
+	{
+		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
+		return;
+	}
 
 
 	// HTMLBuilder hb(cout);
