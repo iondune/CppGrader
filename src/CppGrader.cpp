@@ -11,6 +11,7 @@ string const AllStudentsDirectory = "/home/ian/students/";
 string const SiteDirectory = "/var/www/html/grades/";
 string const TemplateDirectory = "/home/ian/csc473-gradeserver/html/";
 string const AllTestsDirectory = "/home/ian/csc473-testfiles/";
+string const InputsDirectory = "/home/ian/csc473-inputfiles/";
 // string const StudentHTMLDirectory="${site_directory}/${student}/${assignment}/"
 
 class HTMLBuilder
@@ -247,6 +248,28 @@ protected:
 	void RunBuild();
 	void RunTests();
 
+	void CopyInputFiles()
+	{
+		fs::create_directories(RepoDirectory + "build/");
+		fs::create_directories(RepoDirectory + "resources/");
+
+		string directory;
+		for (auto d : fs::directory_iterator(InputsDirectory))
+		{
+			auto p = d.path();
+
+			if (! IsHidden(p))
+			{
+				if (fs::is_regular_file(p))
+				{
+					required_command({"cp", p.string(), RepoDirectory});
+					required_command({"cp", p.string(), RepoDirectory + "build/"});
+					required_command({"cp", p.string(), RepoDirectory + "resources/"});
+				}
+			}
+		}
+	}
+
 };
 
 void Grader::RunGit()
@@ -339,6 +362,8 @@ void Grader::RunTests()
 	{
 		throw grade_exception("Executable missing.", EFailureType::Build);
 	}
+
+	CopyInputFiles();
 
 	string const TestsDirectory = AllTestsDirectory + assignment + "/";
 
