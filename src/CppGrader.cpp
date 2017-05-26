@@ -6,10 +6,10 @@
 using namespace std;
 
 
-string const ExecDirectory = "/home/ian";
-string const AllStudentsDirectory = "/home/ian/students";
-string const SiteDirectory = "/var/www/html/grades";
-string const TemplateDirectory = "/home/ian/csc473-gradeserver/html";
+string const ExecDirectory = "/home/ian/";
+string const AllStudentsDirectory = "/home/ian/students/";
+string const SiteDirectory = "/var/www/html/grades/";
+string const TemplateDirectory = "/home/ian/csc473-gradeserver/html/";
 // string const StudentHTMLDirectory="${site_directory}/${student}/${assignment}/"
 
 class HTMLBuilder
@@ -23,9 +23,9 @@ public:
 
 	void header_info(string const & student, string const & assignment)
 	{
-		Cat(TemplateDirectory + "/top1.html", File);
+		Cat(TemplateDirectory + "top1.html", File);
 		cout << "<title>[" << student << "] CPE 473 Grade Results</title>" << endl;
-		Cat(TemplateDirectory + "/top2.html", File);
+		Cat(TemplateDirectory + "top2.html", File);
 		cout << "<h1>[CPE 473] Program (" << assignment << ") Grade Results</h1>" << endl;
 
 		cout << "<p>Student: " << student << "</p>" << endl;
@@ -51,8 +51,8 @@ public:
 
 	void cleanup(string const & HTMLDirectory)
 	{
-		Cat(HTMLDirectory + "/bottom.html", File);
-		required_command({"mv", HTMLDirectory + "/temp.html", HTMLDirectory + "/index.html"});
+		Cat(HTMLDirectory + "bottom.html", File);
+		required_command({"mv", HTMLDirectory + "temp.html", HTMLDirectory + "index.html"});
 	}
 
 	void collapse_button(string const & id)
@@ -187,19 +187,30 @@ struct EBuildType
 	};
 };
 
+class grade_exception : public std::runtime_error
+{
+
+public:
+
+	grade_exception(string const & what)
+		: std::runtime_error(what)
+	{}
+
+};
+
 void GradeStudent(string const & student, string const & assignment)
 {
-	string const StudentDirectory = AllStudentsDirectory + "/" + student;
-	string const RepoDirectory = StudentDirectory + "/" + "repo";
+	string const StudentDirectory = AllStudentsDirectory + student + "/";
+	string const RepoDirectory = StudentDirectory + "repo/";
 
 	fs::current_path(RepoDirectory);
 	string const CurrentHash = DoGitUpdate(assignment);
 
-	string const ResultsDirectory = StudentDirectory + "/" + "results" + "/" + assignment + "/" + CurrentHash;
+	string const ResultsDirectory = StudentDirectory + "results/" + assignment + "/" + CurrentHash + "/";
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
-	if (fs::is_regular_file(ResultsDirectory + "/" + "grading_done"))
+	if (fs::is_regular_file(ResultsDirectory + "grading_done"))
 	{
 		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
 		return;
@@ -209,6 +220,10 @@ void GradeStudent(string const & student, string const & assignment)
 	// HTMLBuilder hb(cout);
 	// hb.header_info(student, assignment);
 	// hb.directory_listing();
+
+	try_command_redirect({"date"}, ResultsDirectory + "last_run", sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
+	try_command_redirect({"tree", "--filelimit", "32"}, ResultsDirectory + "directory_listing");
+	try_command_redirect({"git", "log", "-n", "1", "--date=local", "HEAD"}, ResultsDirectory + "current_commit");
 
 	CheckForSingleDirectory();
 
@@ -243,6 +258,16 @@ void GradeStudent(string const & student, string const & assignment)
 		fs::create_directories("build/");
 		fs::current_path("build");
 		RemoveIfExists("CMakeCache.txt");
+
+		if (! try_command_redirect({"cmake", ".."}, ResultsDirectory + "cmake_output"))
+		{
+			throw grade_exception("CMake build failed.");
+		}
+
+		if (! try_command_redirect({"make"}, ResultsDirectory + "make_output"))
+		{
+			throw grade_exception("Make build failed.");
+		}
 	}
 
 	// auto build_environment = sp::environment({

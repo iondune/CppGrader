@@ -3,6 +3,7 @@
 
 #include "Util.h"
 #include <iostream>
+#include <stdexcept>
 #include <subprocess.hpp>
 
 namespace sp = subprocess;
@@ -32,4 +33,18 @@ string required_command_output(std::initializer_list<string> const & cmd, Args&&
 		throw sp::CalledProcessError("Command failed: Non zero retcode");
 	}
 	return res.first.buf.data();
+}
+
+template <typename... Args>
+bool try_command_redirect(std::initializer_list<string> const & cmd, string const & filename, Args&&... args)
+{
+	FILE * file = fopen(filename.c_str(), "w");
+	if (! file)
+	{
+		throw std::runtime_error(std::string("Can't open file: ") + filename);
+	}
+	auto p = sp::Popen(cmd, sp::output{file}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
+	auto res = p.communicate();
+	auto retcode = p.poll();
+	return retcode == 0;
 }
