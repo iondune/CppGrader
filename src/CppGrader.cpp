@@ -186,6 +186,7 @@ enum class EBuildType
 
 enum class EFailureType
 {
+	Skip,
 	Build,
 };
 
@@ -202,33 +203,70 @@ public:
 
 };
 
-void GradeStudent(string const & student, string const & assignment)
+class Grader
 {
-	string const StudentDirectory = AllStudentsDirectory + student + "/";
-	string const RepoDirectory = StudentDirectory + "repo/";
 
+public:
+
+	Grader(string const & student, string const & assignment)
+	{
+		this->student = student;
+		this->assignment = assignment;
+
+		StudentDirectory = AllStudentsDirectory + student + "/";
+		RepoDirectory = StudentDirectory + "repo/";
+	}
+
+	void Run()
+	{
+		try
+		{
+			RunGit();
+			RunBuild();
+		}
+		catch (grade_exception const & e)
+		{
+			cout << e.what() << endl;
+		}
+	}
+
+protected:
+
+	string student;
+	string assignment;
+
+	string StudentDirectory;
+	string RepoDirectory;
+	string ResultsDirectory;
+
+	void RunGit();
+	void RunBuild();
+
+};
+
+void Grader::RunGit()
+{
 	fs::current_path(RepoDirectory);
 	string const CurrentHash = DoGitUpdate(assignment);
 
-	string const ResultsDirectory = StudentDirectory + "results/" + assignment + "/" + CurrentHash + "/";
+	ResultsDirectory = StudentDirectory + "results/" + assignment + "/" + CurrentHash + "/";
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
 	if (fs::is_regular_file(ResultsDirectory + "grading_done"))
 	{
 		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
-		return;
+		throw grade_exception("Already run.", EFailureType::Skip);
 	}
-
-
-	// HTMLBuilder hb(cout);
-	// hb.header_info(student, assignment);
-	// hb.directory_listing();
 
 	try_command_redirect({"date"}, ResultsDirectory + "last_run", sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
 	try_command_redirect({"tree", "--filelimit", "32"}, ResultsDirectory + "directory_listing");
 	try_command_redirect({"git", "log", "-n", "1", "--date=local", "HEAD"}, ResultsDirectory + "current_commit");
+}
 
+
+void Grader::RunBuild()
+{
 	CheckForSingleDirectory();
 
 	EBuildType BuildType = EBuildType::Auto;
@@ -257,13 +295,19 @@ void GradeStudent(string const & student, string const & assignment)
 	}
 	cout << endl;
 
+
+	sp::environment build_environment = sp::environment{{
+		{ "GLM_INCLUDE_DIR", "/usr/include/glm/" },
+		{ "EIGEN3_INCLUDE_DIR", "/usr/include/eigen3/" }
+	}};
+
 	if (BuildType == EBuildType::CMake)
 	{
 		fs::create_directories("build/");
 		fs::current_path("build");
 		RemoveIfExists("CMakeCache.txt");
 
-		if (! try_command_redirect({"cmake", ".."}, ResultsDirectory + "cmake_output"))
+		if (! try_command_redirect({"cmake", ".."}, ResultsDirectory + "cmake_output", std::move(build_environment)))
 		{
 			throw grade_exception("CMake build failed.", EFailureType::Build);
 		}
@@ -284,18 +328,16 @@ void GradeStudent(string const & student, string const & assignment)
 	{
 		throw grade_exception("gcc *.cpp auto-build not supported.", EFailureType::Build);
 	}
-
-	// auto build_environment = sp::environment({
-	// 	{ "GLM_INCLUDE_DIR", "/usr/include/glm/" },
-	// 	{ "EIGEN3_INCLUDE_DIR", "/usr/include/eigen3/" }
-	// });
 }
 
 int main()
 {
 	string assignment = "p4";
 
-	GradeStudent("idunn01", assignment);
+	{
+		Grader g("idunn01", assignment);
+		g.Run();
+	}
 	return 0;
 
 	fs::current_path(AllStudentsDirectory);
@@ -312,7 +354,8 @@ int main()
 
 	for (auto student : students)
 	{
-		GradeStudent(student, assignment);
+		Grader g(student, assignment);
+		g.Run();
 	}
 
 	return 0;
