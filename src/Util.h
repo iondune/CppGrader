@@ -19,10 +19,24 @@ vector<string> SeparateLines(string const & str)
 
 	while (getline(Stream, Line))
 	{
-		Lines.push_back(move(Line));
+		Lines.push_back(std::move(Line));
 	}
 
 	return Lines;
+}
+
+vector<string> Explode(string const & str, char delimiter)
+{
+	vector<string> Words;
+	std::istringstream Stream(str);
+	string Word;
+
+	while (getline(Stream, Word, delimiter))
+	{
+		Words.push_back(std::move(Word));
+	}
+
+	return Words;
 }
 
 string ReadAsString(string const & FileName)
@@ -64,4 +78,13 @@ string RightTrimWhitespace(string s)
 string TrimWhitespace(string s)
 {
 	return RightTrimWhitespace(LeftTrimWhitespace(s));
+}
+
+void WriteToFile(string const & FileName, string const & s)
+{
+	std::ofstream file;
+	file.open(FileName);
+
+	file << s;
+	file.close();
 }

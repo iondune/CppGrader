@@ -4,6 +4,7 @@
 #include "Util.h"
 #include <iostream>
 #include <stdexcept>
+#include <chrono>
 #include <subprocess.hpp>
 
 namespace sp = subprocess;
@@ -47,4 +48,56 @@ bool try_command_redirect(std::initializer_list<string> const & cmd, string cons
 	auto res = p.communicate();
 	auto retcode = p.poll();
 	return retcode == 0;
+}
+
+enum class ECommandStatus
+{
+	Success,
+	Failure,
+	Timeout
+};
+
+template <typename... Args>
+ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, string const & filename, float const duration, Args&&... args)
+{
+	FILE * file = fopen(filename.c_str(), "w");
+	if (! file)
+	{
+		throw std::runtime_error(std::string("Can't open file: ") + filename);
+	}
+	auto p = sp::Popen(cmd, sp::output{file}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
+
+	auto start = std::chrono::steady_clock::now();
+	int const timeout = (int) (duration * 1000.f);
+
+	int retcode = -1;
+	while (1)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		retcode = p.poll();
+		if (retcode != -1)
+		{
+			break;
+		}
+
+		int const duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+
+		if (duration > timeout)
+		{
+			p.kill();
+			return ECommandStatus::Timeout;
+		}
+	}
+
+	auto res = p.communicate();
+
+	if (retcode)
+	{
+		return ECommandStatus::Failure;
+	}
+	else
+	{
+		return ECommandStatus::Success;
+	}
 }

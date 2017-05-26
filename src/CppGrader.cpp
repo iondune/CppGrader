@@ -10,6 +10,7 @@ string const ExecDirectory = "/home/ian/";
 string const AllStudentsDirectory = "/home/ian/students/";
 string const SiteDirectory = "/var/www/html/grades/";
 string const TemplateDirectory = "/home/ian/csc473-gradeserver/html/";
+string const AllTestsDirectory = "/home/ian/csc473-testfiles/";
 // string const StudentHTMLDirectory="${site_directory}/${student}/${assignment}/"
 
 class HTMLBuilder
@@ -221,8 +222,11 @@ public:
 	{
 		try
 		{
+			fs::current_path(RepoDirectory);
+
 			RunGit();
 			RunBuild();
+			RunTests();
 		}
 		catch (grade_exception const & e)
 		{
@@ -241,12 +245,12 @@ protected:
 
 	void RunGit();
 	void RunBuild();
+	void RunTests();
 
 };
 
 void Grader::RunGit()
 {
-	fs::current_path(RepoDirectory);
 	string const CurrentHash = DoGitUpdate(assignment);
 
 	ResultsDirectory = StudentDirectory + "results/" + assignment + "/" + CurrentHash + "/";
@@ -263,7 +267,6 @@ void Grader::RunGit()
 	try_command_redirect({"tree", "--filelimit", "32"}, ResultsDirectory + "directory_listing");
 	try_command_redirect({"git", "log", "-n", "1", "--date=local", "HEAD"}, ResultsDirectory + "current_commit");
 }
-
 
 void Grader::RunBuild()
 {
@@ -328,6 +331,58 @@ void Grader::RunBuild()
 	{
 		throw grade_exception("gcc *.cpp auto-build not supported.", EFailureType::Build);
 	}
+}
+
+void Grader::RunTests()
+{
+	if (! fs::is_regular_file("raytrace"))
+	{
+		throw grade_exception("Executable missing.", EFailureType::Build);
+	}
+
+	string const TestsDirectory = AllTestsDirectory + assignment + "/";
+
+	vector<string> const Tests = ReadAsLines(TestsDirectory + "files.txt");
+
+	cout << "Running Tests" << endl;
+	cout << "=============" << endl;
+	for (string const TestName : Tests)
+	{
+		string const ArgsFile = TestsDirectory + TestName + ".args";
+		string const OutFile = TestsDirectory + TestName + ".out";
+		string const MyOutFile = ResultsDirectory + "my" + TestName + ".out";
+		string const MyStatusFile = ResultsDirectory + "my" + TestName + ".out";
+
+		float const Timeout = 20.f;
+
+		cout << "Running test '" << TestName << "'" << endl;
+
+		vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
+		Args.insert(Args.begin(), "raytrace");
+		cout << "- Args are:";
+		for (string & Arg : Args)
+		{
+			Arg = TrimWhitespace(Arg);
+			cout << " '" << Arg << "'";
+		}
+		cout << endl;
+
+		ECommandStatus const Status = try_command_redirect_timeout(Args, MyOutFile, Timeout);
+
+		if (Status == ECommandStatus::Timeout)
+		{
+			cout << "- Timeout occurred." << endl;
+		}
+		else if (Status == ECommandStatus::Success)
+		{
+			cout << "- Test executed." << endl;
+		}
+		else if (Status == ECommandStatus::Failure)
+		{
+			cout << "- Test failed." << endl;
+		}
+	}
+	cout << endl;
 }
 
 int main()
