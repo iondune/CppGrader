@@ -177,14 +177,16 @@ void CheckForSingleDirectory()
 	}
 }
 
-struct EBuildType
+enum class EBuildType
 {
-	enum
-	{
-		CMake,
-		Make,
-		Auto
-	};
+	CMake,
+	Make,
+	Auto
+};
+
+enum class EFailureType
+{
+	Build,
 };
 
 class grade_exception : public std::runtime_error
@@ -192,9 +194,11 @@ class grade_exception : public std::runtime_error
 
 public:
 
-	grade_exception(string const & what)
-		: std::runtime_error(what)
+	grade_exception(string const & what, EFailureType const failureType)
+		: std::runtime_error(what), FailureType(failureType)
 	{}
+
+	EFailureType const FailureType;
 
 };
 
@@ -227,7 +231,7 @@ void GradeStudent(string const & student, string const & assignment)
 
 	CheckForSingleDirectory();
 
-	int BuildType = EBuildType::Auto;
+	EBuildType BuildType = EBuildType::Auto;
 
 	for(auto d : fs::directory_iterator("."))
 	{
@@ -261,13 +265,24 @@ void GradeStudent(string const & student, string const & assignment)
 
 		if (! try_command_redirect({"cmake", ".."}, ResultsDirectory + "cmake_output"))
 		{
-			throw grade_exception("CMake build failed.");
+			throw grade_exception("CMake build failed.", EFailureType::Build);
 		}
 
 		if (! try_command_redirect({"make"}, ResultsDirectory + "make_output"))
 		{
-			throw grade_exception("Make build failed.");
+			throw grade_exception("Make build failed.", EFailureType::Build);
 		}
+	}
+	else if (BuildType == EBuildType::Make)
+	{
+		if (! try_command_redirect({"make"}, ResultsDirectory + "make_output"))
+		{
+			throw grade_exception("Make build failed.", EFailureType::Build);
+		}
+	}
+	else if (BuildType == EBuildType::Auto)
+	{
+		throw grade_exception("gcc *.cpp auto-build not supported.", EFailureType::Build);
 	}
 
 	// auto build_environment = sp::environment({
