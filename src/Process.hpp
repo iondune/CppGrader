@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "Util.h"
+#include "Util.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <chrono>
@@ -9,6 +9,9 @@
 
 namespace sp = subprocess;
 
+
+namespace
+{
 
 template <typename... Args>
 void required_command(std::initializer_list<string> const & cmd, Args&&... args)
@@ -100,4 +103,6 @@ ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, str
 	{
 		return ECommandStatus::Success;
 	}
+}
+
 }

@@ -1,183 +1,16 @@
 
-#include "Util.h"
-#include "Process.h"
-#include "FileSystem.h"
+#include "Util.hpp"
+#include "Process.hpp"
+#include "FileSystem.hpp"
+#include "Directories.hpp"
+#include "Test.hpp"
 
-using namespace std;
+#include <json.hpp>
+using nlohmann::json;
 
+using std::cout;
+using std::endl;
 
-string const ExecDirectory = "/home/ian/";
-string const AllStudentsDirectory = "/home/ian/students/";
-string const SiteDirectory = "/var/www/html/grades/";
-string const TemplateDirectory = "/home/ian/csc473-gradeserver/html/";
-string const AllTestsDirectory = "/home/ian/csc473-testfiles/";
-string const InputsDirectory = "/home/ian/csc473-inputfiles/";
-// string const StudentHTMLDirectory="${site_directory}/${student}/${assignment}/"
-
-class HTMLBuilder
-{
-
-public:
-
-	HTMLBuilder(ostream & file)
-		: File(file)
-	{}
-
-	void header_info(string const & student, string const & assignment)
-	{
-		Cat(TemplateDirectory + "top1.html", File);
-		cout << "<title>[" << student << "] CPE 473 Grade Results</title>" << endl;
-		Cat(TemplateDirectory + "top2.html", File);
-		cout << "<h1>[CPE 473] Program (" << assignment << ") Grade Results</h1>" << endl;
-
-		cout << "<p>Student: " << student << "</p>" << endl;
-
-		cout << "<p>Last Run: " << required_command_output({"date"}, sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}}))) << "</p>" << endl;
-		cout << "<p><a href=\"../\">&lt;&lt; Back to All Grades</a></p>" << endl;
-
-
-		cout << "<p><span>Current Commit:</span></p>" << endl;
-		cout << "<pre><code>";
-		cout << required_command_output({"git", "log", "-n", "1", "--date=local", "HEAD"}) << endl;
-		cout << "</code></pre>" << endl;
-	}
-
-	void directory_listing()
-	{
-		modal_window_start("file_view", "Directory Structure", "primary");
-		cout << "<pre><code>";
-		cout << required_command_output({"tree", "--filelimit", "32"});
-		cout << "</code></pre>" << endl;
-		modal_window_end();
-	}
-
-	void cleanup(string const & HTMLDirectory)
-	{
-		Cat(HTMLDirectory + "bottom.html", File);
-		required_command({"mv", HTMLDirectory + "temp.html", HTMLDirectory + "index.html"});
-	}
-
-	void collapse_button(string const & id)
-	{
-		File << "<button class=\"btn btn-primary\" type=\"button\" data-toggle=\"collapse\" data-target=\"#" << id << "\" aria-expanded=\"false\" aria-controls=\"" << id << "\">" << endl;
-		File << "Show/Hide" << endl;
-		File << "</button>" << endl;
-	}
-
-	void modal_window_start(string const & id, string const & button_label, string const & btn_class)
-	{
-		File << "<button type=\"button\" class=\"btn btn-" << btn_class << " btn-sm\" data-toggle=\"modal\" data-target=\"#" << id << "\">" << endl;
-		File << button_label << endl;
-		File << "</button>" << endl;
-		File << "<div class=\"modal fade\" id=\"" << id << "\" tabindex=\"-1\" role=\"dialog\">" << endl;
-		File << "<div class=\"modal-dialog\" role=\"document\">" << endl;
-		File << "<div class=\"modal-content\">" << endl;
-		File << "<div class=\"modal-header\">" << endl;
-		File << "<button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-label=\"Close\">&times;</button>" << endl;
-		File << "<h4 class=\"modal-title\">" << button_label << "</h4>" << endl;
-		File << "</div>" << endl;
-		File << "<div class=\"modal-body\">" << endl;
-	}
-
-	void modal_window_end()
-	{
-		File << "</div>" << endl;
-		File << "<div class=\"modal-footer\">" << endl;
-		File << "<button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>" << endl;
-		File << "</div>" << endl;
-		File << "</div>" << endl;
-		File << "</div>" << endl;
-		File << "</div>" << endl;
-	}
-
-	ostream & File;
-
-};
-
-string DoGitUpdate(string const & assignment)
-{
-	cout << "Running git update" << endl;
-	cout << "==================" << endl;
-	required_command({"git", "clean", "-d", "-x", "-f"});
-	required_command({"git", "reset", "--hard",});
-	required_command({"git", "fetch", "origin", "master", "--tags"});
-	required_command({"git", "checkout", "master"});
-	required_command({"git", "reset", "--hard", "origin/master"});
-	cout << endl;
-
-	vector<string> tags = SeparateLines(required_command_output({"git", "tag", "-l"}));
-
-	cout << "git tags" << endl;
-	cout << "========" << endl;
-	if (tags.size())
-	{
-		for (auto tag : tags)
-		{
-			cout << tag << endl;
-		}
-	}
-	else
-	{
-		cout << "No tags." << endl;
-	}
-	cout << endl;
-
-	bool FoundTag = false;
-	for (auto tag : tags)
-	{
-		if (tag == assignment)
-		{
-			cout << "Tag found, building." << endl;
-			required_command({"git", "checkout", tag});
-			FoundTag = true;
-		}
-	}
-
-	if (! FoundTag)
-	{
-		cout << "Tag not found, building master." << endl;
-		required_command({"git", "checkout", "master"});
-	}
-	cout << endl;
-
-	cout << "Current commit" << endl;
-	cout << "==============" << endl;
-	required_command({"git", "log", "-n", "1", "--date=local", "HEAD"});
-	cout << endl;
-
-	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "HEAD"}));
-}
-
-void CheckForSingleDirectory()
-{
-	int NumFiles = 0;
-	int NumDirectories = 0;
-
-	string directory;
-	for (auto d : fs::directory_iterator("."))
-	{
-		auto p = d.path();
-
-		if (! IsHidden(p))
-		{
-			if (fs::is_directory(p))
-			{
-				NumDirectories += 1;
-				directory = p;
-			}
-			else if (fs::is_regular_file(p))
-			{
-				NumFiles += 1;
-			}
-		}
-	}
-
-	if (NumFiles == 0 && NumDirectories == 1)
-	{
-		cout << "Found single directory (" << directory << "), entering..." << endl;
-		fs::current_path(directory);
-	}
-}
 
 enum class EBuildType
 {
@@ -190,6 +23,13 @@ enum class EFailureType
 {
 	Skip,
 	Build,
+};
+
+enum class ETestStatus
+{
+	Timeout,
+	Failure,
+	Pass
 };
 
 class grade_exception : public std::runtime_error
@@ -210,13 +50,12 @@ class Grader
 
 public:
 
-	Grader(string const & student, string const & assignment)
+	Grader(string const & student_, string const & assignment_, vector<Test> const & tests)
+		: student(student_), assignment(assignment_), TestSuite(tests)
 	{
-		this->student = student;
-		this->assignment = assignment;
-
 		StudentDirectory = AllStudentsDirectory + student + "/";
 		RepoDirectory = StudentDirectory + "repo/";
+		TestsDirectory = AllTestsDirectory + assignment + "/";
 	}
 
 	void Run()
@@ -237,12 +76,14 @@ public:
 
 protected:
 
-	string student;
-	string assignment;
+	string const student;
+	string const assignment;
+	vector<Test> const TestSuite;
 
 	string StudentDirectory;
 	string RepoDirectory;
 	string ResultsDirectory;
+	string TestsDirectory;
 
 	void RunGit();
 	void RunBuild();
@@ -268,6 +109,185 @@ protected:
 				}
 			}
 		}
+	}
+
+	static string DoGitUpdate(string const & assignment)
+	{
+		cout << "Running git update" << endl;
+		cout << "==================" << endl;
+		required_command({"git", "clean", "-d", "-x", "-f"});
+		required_command({"git", "reset", "--hard",});
+		required_command({"git", "fetch", "origin", "master", "--tags"});
+		required_command({"git", "checkout", "master"});
+		required_command({"git", "reset", "--hard", "origin/master"});
+		cout << endl;
+
+		vector<string> tags = SeparateLines(required_command_output({"git", "tag", "-l"}));
+
+		cout << "git tags" << endl;
+		cout << "========" << endl;
+		if (tags.size())
+		{
+			for (auto tag : tags)
+			{
+				cout << tag << endl;
+			}
+		}
+		else
+		{
+			cout << "No tags." << endl;
+		}
+		cout << endl;
+
+		bool FoundTag = false;
+		for (auto tag : tags)
+		{
+			if (tag == assignment)
+			{
+				cout << "Tag found, building." << endl;
+				required_command({"git", "checkout", tag});
+				FoundTag = true;
+			}
+		}
+
+		if (! FoundTag)
+		{
+			cout << "Tag not found, building master." << endl;
+			required_command({"git", "checkout", "master"});
+		}
+		cout << endl;
+
+		cout << "Current commit" << endl;
+		cout << "==============" << endl;
+		required_command({"git", "log", "-n", "1", "--date=local", "HEAD"});
+		cout << endl;
+
+		return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "HEAD"}));
+	}
+
+	static void CheckForSingleDirectory()
+	{
+		int NumFiles = 0;
+		int NumDirectories = 0;
+
+		string directory;
+		for (auto d : fs::directory_iterator("."))
+		{
+			auto p = d.path();
+
+			if (! IsHidden(p))
+			{
+				if (fs::is_directory(p))
+				{
+					NumDirectories += 1;
+					directory = p;
+				}
+				else if (fs::is_regular_file(p))
+				{
+					NumFiles += 1;
+				}
+			}
+		}
+
+		if (NumFiles == 0 && NumDirectories == 1)
+		{
+			cout << "Found single directory (" << directory << "), entering..." << endl;
+			fs::current_path(directory);
+		}
+	}
+
+	ETestStatus DoTest(Test const & test)
+	{
+		ETestStatus TestStatus = ETestStatus::Failure;
+
+		string const TestName = test.Name;
+		float const Timeout = test.Timeout;
+
+		string const ArgsFile = TestsDirectory + TestName + ".args";
+		string const OutFile = TestsDirectory + TestName + ".out";
+		string const ImageFile = TestsDirectory + TestName + ".png";
+
+		string const MyOutFile = ResultsDirectory + "my" + TestName + ".out";
+		string const MyDiffFile = ResultsDirectory + "my" + TestName + ".diff";
+		string const MyImageFile = ResultsDirectory + "my" + TestName + ".png";
+		string const MyImageDiffFile = ResultsDirectory + "difference_my" + TestName + ".png";
+		string const MyImagePixelsFile = ResultsDirectory + "my" + TestName + ".pixels";
+		string const MyStatusFile = ResultsDirectory + "my" + TestName + ".status";
+
+		cout << "Running test '" << TestName << "'" << endl;
+
+		vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
+		Args.insert(Args.begin(), "raytrace");
+		cout << "- Args are:";
+		for (string & Arg : Args)
+		{
+			Arg = TrimWhitespace(Arg);
+			cout << " '" << Arg << "'";
+		}
+		cout << endl;
+
+		ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout);
+
+		if (CommandStatus == ECommandStatus::Timeout)
+		{
+			cout << "- Timeout occurred." << endl;
+			TestStatus = ETestStatus::Timeout;
+		}
+		else if (CommandStatus == ECommandStatus::Failure)
+		{
+			cout << "- Test failed." << endl;
+		}
+		else if (CommandStatus == ECommandStatus::Success)
+		{
+			cout << "- Test executed." << endl;
+		}
+
+		if (test.Type == ETestType::Text)
+		{
+			bool DiffSucess = try_command_redirect({"diff", OutFile, MyOutFile}, MyDiffFile);
+
+			if (CommandStatus == ECommandStatus::Success && DiffSucess)
+			{
+				TestStatus = ETestStatus::Pass;
+			}
+		}
+		else if (test.Type == ETestType::Image)
+		{
+			if (fs::is_regular_file("output.png"))
+			{
+				required_command({"mv", "output.png", MyImageFile});
+				string img_diff = required_command_output({"compare", "-metric", "AE", "-fuzz", "5%", ImageFile, MyImageFile, MyImageDiffFile});
+				img_diff = TrimWhitespace(img_diff);
+				cout << "- Image diff: " << img_diff << endl;
+
+				int const PixelDifferences = std::stoi(img_diff);
+				WriteToFile(MyImagePixelsFile, std::to_string(PixelDifferences));
+
+				if (CommandStatus == ECommandStatus::Success && PixelDifferences < 1000)
+				{
+					TestStatus = ETestStatus::Pass;
+				}
+			}
+			else
+			{
+				cout << "- No image produced." << endl;
+			}
+		}
+
+		switch (TestStatus)
+		{
+		case ETestStatus::Timeout:
+			WriteToFile(MyStatusFile, "timeout");
+			break;
+		case ETestStatus::Failure:
+			WriteToFile(MyStatusFile, "failure");
+			break;
+		case ETestStatus::Pass:
+			WriteToFile(MyStatusFile, "pass");
+			break;
+		}
+
+		return TestStatus;
 	}
 
 };
@@ -365,47 +385,12 @@ void Grader::RunTests()
 
 	CopyInputFiles();
 
-	string const TestsDirectory = AllTestsDirectory + assignment + "/";
-
-	vector<string> const Tests = ReadAsLines(TestsDirectory + "files.txt");
 
 	cout << "Running Tests" << endl;
 	cout << "=============" << endl;
-	for (string const TestName : Tests)
+	for (Test const & test : TestSuite)
 	{
-		string const ArgsFile = TestsDirectory + TestName + ".args";
-		string const OutFile = TestsDirectory + TestName + ".out";
-		string const MyOutFile = ResultsDirectory + "my" + TestName + ".out";
-		string const MyStatusFile = ResultsDirectory + "my" + TestName + ".out";
-
-		float const Timeout = 20.f;
-
-		cout << "Running test '" << TestName << "'" << endl;
-
-		vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
-		Args.insert(Args.begin(), "raytrace");
-		cout << "- Args are:";
-		for (string & Arg : Args)
-		{
-			Arg = TrimWhitespace(Arg);
-			cout << " '" << Arg << "'";
-		}
-		cout << endl;
-
-		ECommandStatus const Status = try_command_redirect_timeout(Args, MyOutFile, Timeout);
-
-		if (Status == ECommandStatus::Timeout)
-		{
-			cout << "- Timeout occurred." << endl;
-		}
-		else if (Status == ECommandStatus::Success)
-		{
-			cout << "- Test executed." << endl;
-		}
-		else if (Status == ECommandStatus::Failure)
-		{
-			cout << "- Test failed." << endl;
-		}
+		DoTest(test);
 	}
 	cout << endl;
 }
@@ -413,9 +398,24 @@ void Grader::RunTests()
 int main()
 {
 	string assignment = "p4";
+	vector<Test> TestSuite;
+
+	try
+	{
+		std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
+		json j;
+		i >> j;
+		TestSuite = j.get<vector<Test>>();
+	}
+	catch (std::invalid_argument const & e)
+	{
+		cout << "Failed to parse test suite for assignment '" << assignment << "'" << endl;
+		cout << e.what() << endl;
+		return 1;
+	}
 
 	{
-		Grader g("idunn01", assignment);
+		Grader g("idunn01", assignment, TestSuite);
 		g.Run();
 	}
 	return 0;
@@ -434,7 +434,7 @@ int main()
 
 	for (auto student : students)
 	{
-		Grader g(student, assignment);
+		Grader g(student, assignment, TestSuite);
 		g.Run();
 	}
 

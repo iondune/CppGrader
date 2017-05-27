@@ -1,14 +1,5 @@
 
-#pragma once
-
-#include <string>
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
-
-using std::vector;
-using std::string;
+#include "Util.hpp"
 
 
 vector<string> SeparateLines(string const & str)

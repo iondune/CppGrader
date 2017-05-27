@@ -6,6 +6,9 @@
 namespace fs = std::experimental::filesystem;
 
 
+namespace
+{
+
 bool IsHidden(fs::path const & p)
 {
 	fs::path::string_type const name = p.filename();
@@ -26,4 +29,6 @@ bool RemoveIfExists(fs::path const & p)
 	}
 
 	return false;
+}
+
 }
