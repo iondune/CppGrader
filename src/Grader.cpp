@@ -357,6 +357,15 @@ ETestStatus Grader::DoTest(Test const & test)
 	{
 		bool DiffSucess = try_command_redirect({"diff", OutFile, MyOutFile}, MyDiffFile);
 
+		if (DiffSucess)
+		{
+			cout << "- Diff passed." << endl;
+		}
+		else
+		{
+			cout << "- Diff failed." << endl;
+		}
+
 		if (CommandStatus == ECommandStatus::Success && DiffSucess)
 		{
 			TestStatus = ETestStatus::Pass;

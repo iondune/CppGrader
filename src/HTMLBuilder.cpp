@@ -15,7 +15,14 @@ void HTMLBuilder::Generate()
 	status = ReadTrimmed("status");
 
 	header_info(Student, Assignment);
-	build_info();
+
+	if (build_info())
+	{
+		File << "<h2>Test Results</h2>" << endl;
+
+		text_tests();
+	}
+
 
 	cleanup();
 }
@@ -44,8 +51,10 @@ void HTMLBuilder::header_info(string const & student, string const & assignment)
 	modal_window_end();
 }
 
-void HTMLBuilder::build_info()
+bool HTMLBuilder::build_info()
 {
+	bool BuildPassed = false;
+
 	if (status == "build_failure")
 	{
 		File << "<p><span class=\"text-danger\">Build failed.</span></p>" << endl;
@@ -68,6 +77,7 @@ void HTMLBuilder::build_info()
 	}
 	else
 	{
+		BuildPassed = true;
 		File << "<p><span class=\"text-success\">Build succeeded.</span></p>" << endl;
 
 		if (fs::is_regular_file("cmake_output"))
@@ -88,6 +98,51 @@ void HTMLBuilder::build_info()
 			modal_window_end();
 		}
 	}
+
+	return BuildPassed;
+}
+
+void HTMLBuilder::text_tests()
+{
+	vector<string> Tests = ReadAsLines("tests_index");
+
+	if (! Tests.size())
+		return;
+
+	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
+	File << "<thead>" << endl;
+	File << "<tr>" << endl;
+	File << "<th>Test</th>" << endl;
+	File << "<th>Status</th>" << endl;
+	File << "</tr>" << endl;
+	File << "</thead>" << endl;
+	File << "<tbody>" << endl;
+
+	for (auto test : Tests)
+	{
+		File << "<tr><td>" << test << "</td><td>" << endl;
+
+		string const status = ReadTrimmed("my"s + test + ".status");
+
+		if (status == "pass")
+		{
+			File << "<span class=\"label label-success\">Passed</span>" << endl;
+		}
+		else if (status == "timeout")
+		{
+			File << "<span class=\"label label-danger\">Timeout</span>" << endl;
+		}
+		else if (status == "failure")
+		{
+			modal_window_start("diff_"s + test, "Failed - Diff Results ("s + test + ")", "danger");
+			File << "<pre><code>";
+			File << ReadTrimmed("my"s + test + ".diff");
+			File << "</code></pre>" << endl;
+			modal_window_end();
+		}
+	}
+
+	File << "</tbody></table>" << endl;
 }
 
 void HTMLBuilder::cleanup()

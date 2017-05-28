@@ -24,7 +24,8 @@ protected:
 	std::ofstream File;
 
 	void header_info(string const & student, string const & assignment);
-	void build_info();
+	bool build_info();
+	void text_tests();
 
 	void cleanup();
 
