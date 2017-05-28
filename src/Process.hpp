@@ -18,8 +18,8 @@ void required_command(std::initializer_list<string> const & cmd, Args&&... args)
 {
 	auto p = sp::Popen(cmd, sp::output{sp::PIPE}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
 	auto res = p.communicate();
-	auto retcode = p.poll();
-	if (retcode > 0)
+	auto retcode = p.retcode();
+	if (retcode != 0)
 	{
 		throw sp::CalledProcessError("Command failed: Non zero retcode");
 	}
@@ -31,8 +31,8 @@ string required_command_output(std::initializer_list<string> const & cmd, Args&&
 {
 	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);
 	auto res = p.communicate();
-	auto retcode = p.poll();
-	if (retcode > 0)
+	auto retcode = p.retcode();
+	if (retcode != 0)
 	{
 		throw sp::CalledProcessError("Command failed: Non zero retcode");
 	}
@@ -49,7 +49,7 @@ bool try_command_redirect(std::initializer_list<string> const & cmd, string cons
 	}
 	auto p = sp::Popen(cmd, sp::output{file}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
 	auto res = p.communicate();
-	auto retcode = p.poll();
+	int retcode = p.retcode();
 	return retcode == 0;
 }
 

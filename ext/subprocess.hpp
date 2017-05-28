@@ -1021,11 +1021,11 @@ int Popen::wait() throw(OSError) {
     if (errno != ECHILD) throw OSError("waitpid failed", errno);
     return 0;
   }
-  if (WIFEXITED(status)) return WEXITSTATUS(status);
+  if (WIFEXITED(status)) return retcode_ = WEXITSTATUS(status);
   if (WIFSIGNALED(status))
-    return WTERMSIG(status);
+    return retcode_ = WTERMSIG(status);
   else
-    return 255;
+    return retcode_ = 255;
 
   return 0;
 }
