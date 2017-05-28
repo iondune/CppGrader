@@ -47,13 +47,22 @@ void Grader::Run()
 	}
 	catch (std::runtime_error const & e)
 	{
-		cout << "Unexpected exception occurred during grading." <<  endl;
-		cout << e.what() << endl;
+		cerr << "Unexpected exception occurred during grading." << endl;
+		cerr << e.what() << endl;
 	}
 
-	fs::current_path(ResultsDirectory);
-	HTMLBuilder hb(student, assignment);
-	hb.Generate();
+	try
+	{
+		fs::current_path(ResultsDirectory);
+		HTMLBuilder hb(student, assignment);
+		hb.Generate();
+		cout << "Report created at: " << ResultsDirectory + "report.html" << endl;
+	}
+	catch (std::runtime_error const & e)
+	{
+		cerr << "Failed to create html report." << endl;
+		cerr << "Readon: " << e.what() << endl;
+	}
 }
 
 
@@ -355,7 +364,7 @@ ETestStatus Grader::DoTest(Test const & test)
 
 	if (test.Type == ETestType::Text)
 	{
-		bool DiffSucess = try_command_redirect({"diff", OutFile, MyOutFile}, MyDiffFile);
+		bool DiffSucess = try_command_redirect({"diff", "-Bw", OutFile, MyOutFile}, MyDiffFile);
 
 		if (DiffSucess)
 		{

@@ -11,50 +11,93 @@
 #include <json.hpp>
 
 
-
-int main()
+void PrintUsage(string const & exec_name)
 {
-	string assignment = "p1";
-	vector<Test> TestSuite;
+	cerr << "usage: " << exec_name << " all" << endl;
+	cerr << "   or: " << exec_name << " [student] [assignment]" << endl;
+}
 
-	try
+void GradeStudentAssignment()
+{
+
+}
+
+int main(int argc, char const ** argv)
+{
+	vector<string> Arguments;
+	for (int i = 0; i < argc; ++ i)
 	{
-		std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
-		nlohmann::json j;
-		i >> j;
-		TestSuite = j.get<vector<Test>>();
+		Arguments.push_back(argv[i]);
 	}
-	catch (std::invalid_argument const & e)
+
+	if (Arguments.size() == 0)
 	{
-		cout << "Failed to parse test suite for assignment '" << assignment << "'" << endl;
-		cout << e.what() << endl;
+		PrintUsage("CppGrader");
 		return 1;
 	}
 
+	if (Arguments.size() == 1)
 	{
-		Grader g("idunn01", assignment, TestSuite);
-		g.Run();
+		PrintUsage(Arguments[0]);
+		return 1;
 	}
-	return 0;
 
-	fs::current_path(AllStudentsDirectory);
-
-	vector<string> students = ReadAsLines("list");
-
-	cout << "Students" << endl;
-	cout << "========" << endl;
-	for (auto student : students)
+	if (Arguments.size() == 2)
 	{
-		cout << student << endl;
+		if (Arguments[1] != "all")
+		{
+			PrintUsage(Arguments[0]);
+			return 1;
+		}
+
+		printf("Not yet implemented.\n");
+		// fs::current_path(AllStudentsDirectory);
+
+		// vector<string> students = ReadAsLines("list");
+
+		// cout << "Students" << endl;
+		// cout << "========" << endl;
+		// for (auto student : students)
+		// {
+		// 	cout << student << endl;
+		// }
+		// cout << endl;
+
+		// for (auto student : students)
+		// {
+		// 	Grader g(student, assignment, TestSuite);
+		// 	g.Run();
+		// }
+		return 0;
 	}
-	cout << endl;
 
-	for (auto student : students)
+	if (Arguments.size() == 3)
 	{
+		string const student = Arguments[1];
+		string const assignment = Arguments[2];
+
+		vector<Test> TestSuite;
+
+		try
+		{
+			std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
+			nlohmann::json j;
+			i >> j;
+			TestSuite = j.get<vector<Test>>();
+		}
+		catch (std::invalid_argument const & e)
+		{
+			cout << "Failed to parse test suite for assignment '" << assignment << "'" << endl;
+			cout << e.what() << endl;
+			return 1;
+		}
+
 		Grader g(student, assignment, TestSuite);
 		g.Run();
+
+		return 0;
 	}
 
-	return 0;
+	PrintUsage(Arguments[0]);
+	return 1;
 }
-
