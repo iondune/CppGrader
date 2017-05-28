@@ -1,5 +1,6 @@
 
 #include "HTMLBuilder.hpp"
+#include "FileSystem.hpp"
 
 
 HTMLBuilder::HTMLBuilder(string const & student, string const & assignment)
@@ -11,7 +12,10 @@ HTMLBuilder::HTMLBuilder(string const & student, string const & assignment)
 
 void HTMLBuilder::Generate()
 {
+	status = ReadTrimmed("status");
+
 	header_info(Student, Assignment);
+	build_info();
 
 	cleanup();
 }
@@ -38,6 +42,52 @@ void HTMLBuilder::header_info(string const & student, string const & assignment)
 	File << ReadTrimmed("directory_listing");
 	File << "</code></pre>" << endl;
 	modal_window_end();
+}
+
+void HTMLBuilder::build_info()
+{
+	if (status == "build_failure")
+	{
+		File << "<p><span class=\"text-danger\">Build failed.</span></p>" << endl;
+
+		if (fs::is_regular_file("cmake_output"))
+		{
+			File << "<p>CMake output:</p>" << endl;
+			File << "<pre><code>";
+			File << ReadTrimmed("cmake_output");
+			File << "</code></pre>" << endl;
+		}
+
+		if (fs::is_regular_file("make_output"))
+		{
+			File << "<p>Make output:</p>" << endl;
+			File << "<pre><code>";
+			File << ReadTrimmed("make_output");
+			File << "</code></pre>" << endl;
+		}
+	}
+	else
+	{
+		File << "<p><span class=\"text-success\">Build succeeded.</span></p>" << endl;
+
+		if (fs::is_regular_file("cmake_output"))
+		{
+			modal_window_start("cmake_output", "CMake Output", "primary");
+			File << "<pre><code>";
+			File << ReadTrimmed("cmake_output");
+			File << "</code></pre>" << endl;
+			modal_window_end();
+		}
+
+		if (fs::is_regular_file("make_output"))
+		{
+			modal_window_start("cmake_output", "Make Output", "primary");
+			File << "<pre><code>";
+			File << ReadTrimmed("make_output");
+			File << "</code></pre>" << endl;
+			modal_window_end();
+		}
+	}
 }
 
 void HTMLBuilder::cleanup()

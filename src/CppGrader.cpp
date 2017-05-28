@@ -14,7 +14,7 @@
 
 int main()
 {
-	string assignment = "p4";
+	string assignment = "p1";
 	vector<Test> TestSuite;
 
 	try

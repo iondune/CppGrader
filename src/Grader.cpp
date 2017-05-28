@@ -61,7 +61,7 @@ void Grader::RunGit()
 {
 	string const CurrentHash = DoGitUpdate(assignment);
 
-	ResultsDirectory = StudentDirectory + "results/" + assignment + "/" + CurrentHash + "/";
+	ResultsDirectory = SiteDirectory + student + "/" + assignment + "/" + CurrentHash + "/";
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
