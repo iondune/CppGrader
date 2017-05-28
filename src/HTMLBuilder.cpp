@@ -145,6 +145,8 @@ void HTMLBuilder::text_tests()
 			File << "</code></pre>" << endl;
 			modal_window_end();
 		}
+
+		File << "</td></tr>" << endl;
 	}
 
 	File << "</tbody></table>" << endl;
@@ -157,8 +159,20 @@ void HTMLBuilder::image_tests()
 	if (! Tests.size())
 		return;
 
+	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
+	File << "<thead>" << endl;
+	File << "<tr>" << endl;
+	File << "<th>Test</th>" << endl;
+	File << "<th>Status</th>" << endl;
+	File << "<th>Results</th>" << endl;
+	File << "</tr>" << endl;
+	File << "</thead>" << endl;
+	File << "<tbody>" << endl;
+
 	for (auto test : Tests)
 	{
+		File << "<tr><td>" << test << "</td><td>" << endl;
+
 		string const ImageFile = "my"s + test + ".png";
 
 		string const status = ReadTrimmed("my"s + test + ".status");
@@ -177,6 +191,8 @@ void HTMLBuilder::image_tests()
 		{
 			File << "<span class=\"label label-danger\">Failure</span>" << endl;
 		}
+
+		File << "</td><td>" << endl;
 
 		if (! fs::is_regular_file(ImageFile))
 		{
@@ -214,8 +230,10 @@ void HTMLBuilder::image_tests()
 		File << "</code></pre>" << endl;
 		modal_window_end();
 
-		File << "<hr />" << endl;
+		File << "</td></tr>" << endl;
 	}
+
+	File << "</tbody></table>" << endl;
 }
 
 void HTMLBuilder::cleanup()
