@@ -19,12 +19,6 @@ enum class EBuildType
 	Auto
 };
 
-enum class EFailureType
-{
-	Skip,
-	Build,
-};
-
 enum class ETestStatus
 {
 	Timeout,
@@ -32,16 +26,24 @@ enum class ETestStatus
 	Pass
 };
 
-class grade_exception : public std::runtime_error
+class skip_exception : public std::runtime_error
 {
 
 public:
 
-	grade_exception(string const & what, EFailureType const failureType)
-		: std::runtime_error(what), FailureType(failureType)
+	skip_exception(string const & what)
+		: std::runtime_error(what)
 	{}
 
-	EFailureType const FailureType;
+};
+class build_exception : public std::runtime_error
+{
+
+public:
+
+	build_exception(string const & what)
+		: std::runtime_error(what)
+	{}
 
 };
 
@@ -66,10 +68,32 @@ public:
 
 			RunGit();
 			RunBuild();
-			RunTests();
+			if (RunTests())
+			{
+				WriteToFile(ResultsDirectory + "status", "passed");
+				std::stringstream s;
+				s << required_command_output({"date"}, sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
+				s << endl;
+				s << required_command_output({"git", "log", "-n", "1", "--date=local", "HEAD"});
+				s << endl;
+				WriteToFile(ResultsDirectory + "passfile", s.str());
+			}
+			else
+			{
+				WriteToFile(ResultsDirectory + "status", "test_failure");
+			}
 		}
-		catch (grade_exception const & e)
+		catch (skip_exception const & e)
+		{}
+		catch (build_exception const & e)
 		{
+			cout << "Build failure." << endl;
+			cout << e.what() << endl;
+			WriteToFile(ResultsDirectory + "status", "build_failure");
+		}
+		catch (std::runtime_error const & e)
+		{
+			cout << "Unexpected exception occurred during grading." <<  endl;
 			cout << e.what() << endl;
 		}
 	}
@@ -87,7 +111,7 @@ protected:
 
 	void RunGit();
 	void RunBuild();
-	void RunTests();
+	bool RunTests();
 
 	void CopyInputFiles()
 	{
@@ -300,10 +324,10 @@ void Grader::RunGit()
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
-	if (fs::is_regular_file(ResultsDirectory + "grading_done"))
+	if (fs::is_regular_file(ResultsDirectory + "status"))
 	{
 		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
-		throw grade_exception("Already run.", EFailureType::Skip);
+		throw skip_exception("Already graded.");
 	}
 
 	try_command_redirect({"date"}, ResultsDirectory + "last_run", sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
@@ -327,10 +351,10 @@ void Grader::RunBuild()
 				BuildType = EBuildType::CMake;
 				cout << "Found CMakeLists.txt, doing CMake build." << endl;
 			}
-			else if (p.filename() == "CMakeLists.txt")
+			else if (p.filename() == "Makefile")
 			{
 				BuildType = EBuildType::Make;
-				cout << "Found CMakeLists.txt, doing Make build." << endl;
+				cout << "Found Makefile, doing Make build." << endl;
 			}
 		}
 	}
@@ -355,44 +379,57 @@ void Grader::RunBuild()
 
 		if (! try_command_redirect({"cmake", ".."}, ResultsDirectory + "cmake_output", std::move(build_environment)))
 		{
-			throw grade_exception("CMake build failed.", EFailureType::Build);
+			throw build_exception("CMake build failed.");
 		}
 
 		if (! try_command_redirect({"make"}, ResultsDirectory + "make_output"))
 		{
-			throw grade_exception("Make build failed.", EFailureType::Build);
+			throw build_exception("Make build failed.");
 		}
 	}
 	else if (BuildType == EBuildType::Make)
 	{
 		if (! try_command_redirect({"make"}, ResultsDirectory + "make_output"))
 		{
-			throw grade_exception("Make build failed.", EFailureType::Build);
+			throw build_exception("Make build failed.");
 		}
 	}
 	else if (BuildType == EBuildType::Auto)
 	{
-		throw grade_exception("gcc *.cpp auto-build not supported.", EFailureType::Build);
+		throw build_exception("gcc *.cpp auto-build not supported.");
+	}
+
+	if (! fs::is_regular_file("raytrace"))
+	{
+		throw build_exception("Executable missing.");
 	}
 }
 
-void Grader::RunTests()
+bool Grader::RunTests()
 {
-	if (! fs::is_regular_file("raytrace"))
-	{
-		throw grade_exception("Executable missing.", EFailureType::Build);
-	}
-
 	CopyInputFiles();
 
+	bool AllTestsPassed = true;
 
 	cout << "Running Tests" << endl;
 	cout << "=============" << endl;
 	for (Test const & test : TestSuite)
 	{
-		DoTest(test);
+		if (DoTest(test) != ETestStatus::Pass && test.Required)
+		{
+			AllTestsPassed = false;
+		}
 	}
 	cout << endl;
+
+	if (AllTestsPassed)
+	{
+		cout << "All tests passed!" << endl;
+	}
+	else
+	{
+		cout << "Some tests failed." << endl;
+	}
 }
 
 int main()
