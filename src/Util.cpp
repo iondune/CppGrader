@@ -33,6 +33,12 @@ vector<string> Explode(string const & str, char delimiter)
 string ReadAsString(string const & FileName)
 {
 	std::ifstream FileHandle(FileName);
+	if (! FileHandle)
+	{
+		cout << "Could not open file: '" << FileName << "'" << endl;
+		return "";
+	}
+
 	std::string String;
 
 	FileHandle.seekg(0, std::ios::end);
@@ -44,13 +50,23 @@ string ReadAsString(string const & FileName)
 	return String;
 }
 
+string ReadTrimmed(string const & FileName)
+{
+	return TrimWhitespace(ReadAsString(FileName));
+}
+
 vector<string> ReadAsLines(string const & FileName)
 {
 	return SeparateLines(ReadAsString(FileName));
 }
 
-string Cat(string const & FileName, std::ostream & File)
+void Cat(string const & FileName, std::ostream & File)
 {
+	if (! File)
+	{
+		cout << "Could not cat '" << FileName << "' - output file is not open" << endl;
+		return;
+	}
 	File << ReadAsString(FileName);
 }
 
