@@ -3,12 +3,17 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
 
 using std::vector;
 using std::string;
+
+using std::cout;
+using std::endl;
+
 using namespace std::literals::string_literals;
 
 

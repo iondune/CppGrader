@@ -979,7 +979,11 @@ class Popen {
   int retcode_ = -1;
 };
 
+#ifdef SUBPROCESS_HPP_IMPLEMENTATION
+
 void Popen::init_args() { populate_c_argv(); }
+
+#endif
 
 template <typename F, typename... Args>
 void Popen::init_args(F&& farg, Args&&... args) {
@@ -987,6 +991,8 @@ void Popen::init_args(F&& farg, Args&&... args) {
   argd.set_option(std::forward<F>(farg));
   init_args(std::forward<Args>(args)...);
 }
+
+#ifdef SUBPROCESS_HPP_IMPLEMENTATION
 
 void Popen::populate_c_argv() {
   cargv_.clear();
@@ -1136,7 +1142,11 @@ void Popen::execute_process() throw(CalledProcessError, OSError) {
   }
 }
 
+#endif
+
 namespace detail {
+
+#ifdef SUBPROCESS_HPP_IMPLEMENTATION
 
 void ArgumentDeducer::set_option(executable&& exe) {
   popen_->exe_name_ = std::move(exe.arg_value);
@@ -1431,6 +1441,8 @@ std::pair<OutBuffer, ErrBuffer> Communication::communicate_threaded(
   return std::make_pair(std::move(obuf), std::move(ebuf));
 }
 
+#endif
+
 };  // end namespace detail
 
 // Convenience Functions
@@ -1456,8 +1468,12 @@ int call_impl(F& farg, Args&&... args) {
   return Popen(std::forward<F>(farg), std::forward<Args>(args)...).wait();
 }
 
+#ifdef SUBPROCESS_HPP_IMPLEMENTATION
+
 void pipeline_impl(std::vector<Popen>& cmds) { /* EMPTY IMPL */
 }
+
+#endif
 
 template <typename... Args>
 void pipeline_impl(std::vector<Popen>& cmds, const std::string& cmd,
