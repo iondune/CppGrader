@@ -26,6 +26,7 @@ protected:
 	void header_info(string const & student, string const & assignment);
 	bool build_info();
 	void text_tests();
+	void image_tests();
 
 	void cleanup();
 

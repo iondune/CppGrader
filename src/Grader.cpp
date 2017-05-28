@@ -376,6 +376,7 @@ ETestStatus Grader::DoTest(Test const & test)
 		if (fs::is_regular_file("output.png"))
 		{
 			required_command({"mv", "output.png", MyImageFile});
+			required_command({"cp", ImageFile , ResultsDirectory + TestName + ".png"});
 			string img_diff = required_command_output({"compare", "-metric", "AE", "-fuzz", "5%", ImageFile, MyImageFile, MyImageDiffFile});
 			img_diff = TrimWhitespace(img_diff);
 			cout << "- Image diff: " << img_diff << endl;
