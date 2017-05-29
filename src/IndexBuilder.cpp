@@ -151,6 +151,8 @@ void IndexBuilder::GenerateStudentIndex()
 	Cat(TemplateDirectory + "top2.html", File);
 	File << "<h1>[CPE 473] All Program Grade Results</h1>" << endl;
 	Cat("table.html", File);
+	string const repo = ReadAsString(AllStudentsDirectory + Student + "/" + "link");
+	File << "<p>Repo: <a href=\"" << repo << "\">" << repo << "</a></p>" << endl;
 	Cat(TemplateDirectory + "bottom.html", File);
 
 	File.close();
@@ -181,6 +183,10 @@ void IndexBuilder::GenerateCompleteIndex()
 		string table = ReadAsString(student + "/table.html");
 		table = replace_all(table, "href=\"", "href=\"" + student + "/");
 		File << table;
+
+		string const repo = ReadAsString(AllStudentsDirectory + student + "/" + "link");
+		File << "<p>Repo: <a href=\"" << repo << "\">" << repo << "</a></p>" << endl;
+		File << "<hr />" << endl;
 	}
 	Cat(TemplateDirectory + "bottom.html", File);
 
