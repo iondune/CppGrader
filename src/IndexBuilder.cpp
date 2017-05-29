@@ -49,7 +49,7 @@ void IndexBuilder::GenerateAssignmentIndex()
 			}
 			else if (status == "test_failure")
 			{
-				File << "<span class=\"label label-danger\">Test Failure</span>" << endl;
+				File << "<span class=\"label label-warning\">Test Failure</span>" << endl;
 			}
 			else if (status == "build_failure")
 			{
