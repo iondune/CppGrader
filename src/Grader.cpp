@@ -70,6 +70,10 @@ void Grader::Run()
 		fs::current_path("..");
 		ib.GenerateStudentIndex();
 		cout << "Student index created at: " << fs::current_path().string() + "/index.html" << endl;
+
+		fs::current_path("..");
+		ib.GenerateCompleteIndex();
+		cout << "Complete index created at: " << fs::current_path().string() + "/index.html" << endl;
 	}
 	catch (std::runtime_error const & e)
 	{

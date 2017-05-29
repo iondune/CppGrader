@@ -50,18 +50,24 @@ int main(int argc, char const ** argv)
 			return 1;
 		}
 
-		printf("Not yet implemented.\n");
-		// fs::current_path(AllStudentsDirectory);
+		vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
+		vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
 
-		// vector<string> students = ReadAsLines("list");
+		cout << "Assignments" << endl;
+		cout << "===========" << endl;
+		for (auto assignment : assignments)
+		{
+			cout << assignment << endl;
+		}
+		cout << endl;
 
-		// cout << "Students" << endl;
-		// cout << "========" << endl;
-		// for (auto student : students)
-		// {
-		// 	cout << student << endl;
-		// }
-		// cout << endl;
+		cout << "Students" << endl;
+		cout << "========" << endl;
+		for (auto student : students)
+		{
+			cout << student << endl;
+		}
+		cout << endl;
 
 		// for (auto student : students)
 		// {

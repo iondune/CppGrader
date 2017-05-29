@@ -73,13 +73,8 @@ void IndexBuilder::GenerateAssignmentIndex()
 
 void IndexBuilder::GenerateStudentIndex()
 {
-	File.open("index.html");
+	File.open("table.html");
 
-	Cat(TemplateDirectory + "top1.html", File);
-	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
-	Cat(TemplateDirectory + "top2.html", File);
-
-	File << "<h1>[CPE 473] All Program Grade Results</h1>" << endl;
 	File << "<p>Student: " << Student << "</p>" << endl;
 
 	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
@@ -146,6 +141,48 @@ void IndexBuilder::GenerateStudentIndex()
 
 	File << "</tbody></table>" << endl;
 
+	File.close();
+
+
+	File.open("index.html");
+
+	Cat(TemplateDirectory + "top1.html", File);
+	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
+	Cat(TemplateDirectory + "top2.html", File);
+	File << "<h1>[CPE 473] All Program Grade Results</h1>" << endl;
+	Cat("table.html", File);
 	Cat(TemplateDirectory + "bottom.html", File);
+
+	File.close();
+}
+
+std::string replace_all(std::string subject, std::string const & search, std::string const & with) {
+	size_t pos = 0;
+	while ((pos = subject.find(search, pos)) != std::string::npos)
+	{
+		subject.replace(pos, search.length(), with);
+		pos += with.length();
+	}
+	return subject;
+}
+
+void IndexBuilder::GenerateCompleteIndex()
+{
+	File.open("all.html");
+
+	Cat(TemplateDirectory + "top1.html", File);
+	File << "<title>CPE 473 Grade Results</title>" << endl;
+	Cat(TemplateDirectory + "top2.html", File);
+	File << "<h1>[CPE 473] All Student Grade Results</h1>" << endl;
+
+	vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
+	for (string const & student : students)
+	{
+		string table = ReadAsString(student + "/table.html");
+		table = replace_all(table, "href=\"", "href=\"" + student + "/");
+		File << table;
+	}
+	Cat(TemplateDirectory + "bottom.html", File);
+
 	File.close();
 }

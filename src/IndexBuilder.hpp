@@ -14,6 +14,7 @@ public:
 
 	void GenerateAssignmentIndex();
 	void GenerateStudentIndex();
+	void GenerateCompleteIndex();
 
 protected:
 
