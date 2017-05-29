@@ -106,6 +106,7 @@ void Grader::RunGit()
 void Grader::RunBuild()
 {
 	CheckForSingleDirectory();
+	CopyInputFiles();
 
 	EBuildType BuildType = EBuildType::Auto;
 
@@ -141,7 +142,6 @@ void Grader::RunBuild()
 
 	if (BuildType == EBuildType::CMake)
 	{
-		fs::create_directories("build/");
 		fs::current_path("build");
 		RemoveIfExists("CMakeCache.txt");
 
@@ -175,8 +175,6 @@ void Grader::RunBuild()
 
 bool Grader::RunTests()
 {
-	CopyInputFiles();
-
 	bool AllTestsPassed = true;
 
 	std::stringstream TestIndex;
@@ -224,8 +222,8 @@ bool Grader::RunTests()
 
 void Grader::CopyInputFiles()
 {
-	fs::create_directories(RepoDirectory + "build/");
-	fs::create_directories(RepoDirectory + "resources/");
+	fs::create_directories("build/");
+	fs::create_directories("resources/");
 
 	for (auto d : fs::directory_iterator(InputsDirectory))
 	{
@@ -235,9 +233,9 @@ void Grader::CopyInputFiles()
 		{
 			if (fs::is_regular_file(p))
 			{
-				required_command({"cp", p.string(), RepoDirectory});
-				required_command({"cp", p.string(), RepoDirectory + "build/"});
-				required_command({"cp", p.string(), RepoDirectory + "resources/"});
+				required_command({"cp", p.string(), "./"});
+				required_command({"cp", p.string(), "build/"});
+				required_command({"cp", p.string(), "resources/"});
 			}
 		}
 	}
