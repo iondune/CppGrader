@@ -42,7 +42,7 @@ void HTMLBuilder::header_info(string const & student, string const & assignment)
 	File << "<p>Student: " << student << "</p>" << endl;
 
 	File << "<p>Grade Time/Date: " << ReadTrimmed("last_run") << "</p>" << endl;
-	File << "<p><a href=\"../\">&lt;&lt; Back to All Grades</a></p>" << endl;
+	File << "<p><a href=\"../\">&lt;&lt; Back to Commit Grade History</a></p>" << endl;
 
 	File << "<p><span>Current Commit:</span></p>" << endl;
 	File << "<pre><code>";
