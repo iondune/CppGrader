@@ -50,6 +50,10 @@ int main(int argc, char const ** argv)
 			return 1;
 		}
 
+		cout << "################################################################################" << endl;
+		cout << "Performing bulk grade of all students/assignments." << endl;
+		cout << endl << endl;
+
 		vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
 		vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
 
@@ -92,6 +96,8 @@ int main(int argc, char const ** argv)
 				Grader g(student, assignment, TestSuite);
 				g.Run();
 			}
+
+			cout << endl << endl;
 		}
 		return 0;
 	}
