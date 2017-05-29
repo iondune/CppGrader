@@ -4,6 +4,7 @@
 #include "Directories.hpp"
 #include "Process.hpp"
 #include "HTMLBuilder.hpp"
+#include "IndexBuilder.hpp"
 
 
 Grader::Grader(string const & student_, string const & assignment_, vector<Test> const & tests)
@@ -60,6 +61,15 @@ void Grader::Run()
 		HTMLBuilder hb(student, assignment);
 		hb.Generate();
 		cout << "Report created at: " << ResultsDirectory + "report.html" << endl;
+
+		fs::current_path(AssignmentResultsDirectory);
+		IndexBuilder ib(student, assignment);
+		ib.GenerateAssignmentIndex();
+		cout << "Assignment index created at: " << AssignmentResultsDirectory + "index.html" << endl;
+
+		fs::current_path("..");
+		ib.GenerateStudentIndex();
+		cout << "Student index created at: " << fs::current_path().string() + "index.html" << endl;
 	}
 	catch (std::runtime_error const & e)
 	{
@@ -211,7 +221,6 @@ void Grader::CopyInputFiles()
 	fs::create_directories(RepoDirectory + "build/");
 	fs::create_directories(RepoDirectory + "resources/");
 
-	string directory;
 	for (auto d : fs::directory_iterator(InputsDirectory))
 	{
 		auto p = d.path();
