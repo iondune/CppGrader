@@ -94,7 +94,6 @@ void IndexBuilder::GenerateStudentIndex()
 		File << "<tr><td><a href=\"" << assignment << "/\">" << assignment << "</a></td><td>" << endl;
 
 		vector<string> pairs = ReadAsLines(assignment + "/" + "list");
-		std::reverse(pairs.begin(), pairs.end());
 
 		string hash = "none";
 		string status = "???";
