@@ -69,11 +69,30 @@ int main(int argc, char const ** argv)
 		}
 		cout << endl;
 
-		// for (auto student : students)
-		// {
-		// 	Grader g(student, assignment, TestSuite);
-		// 	g.Run();
-		// }
+		for (string const & assignment : assignments)
+		{
+			vector<Test> TestSuite;
+
+			try
+			{
+				std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
+				nlohmann::json j;
+				i >> j;
+				TestSuite = j.get<vector<Test>>();
+			}
+			catch (std::invalid_argument const & e)
+			{
+				cout << "Failed to parse test suite for assignment '" << assignment << "'" << endl;
+				cout << e.what() << endl;
+				return 1;
+			}
+
+			for (string const & student : students)
+			{
+				Grader g(student, assignment, TestSuite);
+				g.Run();
+			}
+		}
 		return 0;
 	}
 
