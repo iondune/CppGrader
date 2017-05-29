@@ -14,6 +14,15 @@ namespace
 {
 
 template <typename... Args>
+string command_output(std::initializer_list<string> const & cmd, Args&&... args)
+{
+	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);
+	auto res = p.communicate();
+	auto retcode = p.retcode();
+	return res.first.buf.data();
+}
+
+template <typename... Args>
 void required_command(std::initializer_list<string> const & cmd, Args&&... args)
 {
 	auto p = sp::Popen(cmd, sp::output{sp::PIPE}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
@@ -21,7 +30,10 @@ void required_command(std::initializer_list<string> const & cmd, Args&&... args)
 	auto retcode = p.retcode();
 	if (retcode != 0)
 	{
-		throw sp::CalledProcessError("Command failed: Non zero retcode");
+		string command;
+		for (auto c : cmd)
+			command += " "s + c;
+		throw sp::CalledProcessError("Required command failed (non-zero retcode):" + command);
 	}
 	std::cout << res.first.buf.data();
 }
@@ -34,7 +46,10 @@ string required_command_output(std::initializer_list<string> const & cmd, Args&&
 	auto retcode = p.retcode();
 	if (retcode != 0)
 	{
-		throw sp::CalledProcessError("Command failed: Non zero retcode");
+		string command;
+		for (auto c : cmd)
+			command += " "s + c;
+		throw sp::CalledProcessError("Required command failed (non-zero retcode):" + command);
 	}
 	return res.first.buf.data();
 }

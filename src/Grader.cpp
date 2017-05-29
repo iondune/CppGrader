@@ -213,6 +213,8 @@ bool Grader::RunTests()
 	{
 		cout << "Some tests failed." << endl;
 	}
+
+	return AllTestsPassed;
 }
 
 
@@ -403,7 +405,7 @@ ETestStatus Grader::DoTest(Test const & test)
 		{
 			required_command({"mv", "output.png", MyImageFile});
 			required_command({"cp", ImageFile , ResultsDirectory + TestName + ".png"});
-			string img_diff = required_command_output({"compare", "-metric", "AE", "-fuzz", "5%", ImageFile, MyImageFile, MyImageDiffFile});
+			string img_diff = command_output({"compare", "-metric", "AE", "-fuzz", "5%", ImageFile, MyImageFile, MyImageDiffFile});
 			img_diff = TrimWhitespace(img_diff);
 			cout << "- Image diff: " << img_diff << endl;
 
