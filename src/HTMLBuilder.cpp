@@ -185,7 +185,7 @@ void HTMLBuilder::image_tests()
 		}
 		else if (status == "timeout")
 		{
-			File << "<span class=\"label label-danger\">Timeout</span>" << endl;
+			File << "<span class=\"label label-warning\">Timeout</span>" << endl;
 		}
 		else if (status == "failure")
 		{
