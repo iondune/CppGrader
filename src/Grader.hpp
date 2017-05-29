@@ -52,10 +52,12 @@ protected:
 	string const student;
 	string const assignment;
 	vector<Test> const TestSuite;
+	string CurrentHash;
 
 	string StudentDirectory;
 	string RepoDirectory;
 	string ResultsDirectory;
+	string AssignmentResultsDirectory;
 	string TestsDirectory;
 
 	void RunGit();

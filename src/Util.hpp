@@ -27,4 +27,4 @@ void Cat(string const & FileName, std::ostream & File);
 string LeftTrimWhitespace(string s);
 string RightTrimWhitespace(string s);
 string TrimWhitespace(string s);
-void WriteToFile(string const & FileName, string const & s);
+void WriteToFile(string const & FileName, string const & s, bool const append = false);

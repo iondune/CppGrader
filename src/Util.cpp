@@ -87,10 +87,17 @@ string TrimWhitespace(string s)
 	return RightTrimWhitespace(LeftTrimWhitespace(s));
 }
 
-void WriteToFile(string const & FileName, string const & s)
+void WriteToFile(string const & FileName, string const & s, bool const append)
 {
 	std::ofstream file;
-	file.open(FileName);
+	if (append)
+	{
+		file.open(FileName, std::ios_base::app);
+	}
+	else
+	{
+		file.open(FileName);
+	}
 
 	file << s;
 	file.close();

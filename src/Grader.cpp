@@ -25,6 +25,7 @@ void Grader::Run()
 		if (RunTests())
 		{
 			WriteToFile(ResultsDirectory + "status", "passed");
+			WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " passed\n", true);
 			std::stringstream s;
 			s << required_command_output({"date"}, sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
 			s << endl;
@@ -35,6 +36,7 @@ void Grader::Run()
 		else
 		{
 			WriteToFile(ResultsDirectory + "status", "test_failure");
+			WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " test_failure\n", true);
 		}
 	}
 	catch (skip_exception const & e)
@@ -44,6 +46,7 @@ void Grader::Run()
 		cout << "Build failure." << endl;
 		cout << e.what() << endl;
 		WriteToFile(ResultsDirectory + "status", "build_failure");
+		WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " build_failure\n", true);
 	}
 	catch (std::runtime_error const & e)
 	{
@@ -68,9 +71,10 @@ void Grader::Run()
 
 void Grader::RunGit()
 {
-	string const CurrentHash = DoGitUpdate(assignment);
+	CurrentHash = DoGitUpdate(assignment);
 
-	ResultsDirectory = SiteDirectory + student + "/" + assignment + "/" + CurrentHash + "/";
+	AssignmentResultsDirectory = SiteDirectory + student + "/" + assignment + "/";
+	ResultsDirectory = AssignmentResultsDirectory + CurrentHash + "/";
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
