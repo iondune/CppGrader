@@ -76,7 +76,7 @@ enum class ECommandStatus
 };
 
 template <typename... Args>
-ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, string const & filename, float const duration, Args&&... args)
+ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, string const & filename, float const max_duration, float & out_duration, Args&&... args)
 {
 	FILE * file = fopen(filename.c_str(), "w");
 	if (! file)
@@ -86,7 +86,7 @@ ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, str
 	auto p = sp::Popen(cmd, sp::output{file}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
 
 	auto start = std::chrono::steady_clock::now();
-	int const timeout = (int) (duration * 1000.f);
+	int const timeout = (int) (max_duration * 1000.f);
 
 	int retcode = -1;
 	while (1)
@@ -100,6 +100,7 @@ ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, str
 		}
 
 		int const duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+		out_duration = duration / 1000.f;
 
 		if (duration > timeout)
 		{

@@ -194,13 +194,14 @@ void HTMLBuilder::image_tests()
 
 		File << "</td><td>" << endl;
 
+		File << "<p>Test took " << ReadTrimmed("my"s + test + ".duration") << "s, timeout was " << ReadTrimmed(test + ".timeout") << "s.</p>" << endl;
 		if (! fs::is_regular_file(ImageFile))
 		{
 			File << "<p><span class=\"text-danger\">Image for " << test << " failed - no image produced.</span></p>" << endl;
 		}
 		else
 		{
-			File << "<p><span class=\"text-" << type << "\">Found " << ReadTrimmed("my"s + test + ".pixels") << " pixel differents - up to 1000 are allowed.</span></p>" << endl;
+			File << "<p><span class=\"text-" << type << "\">Found " << ReadTrimmed("my"s + test + ".pixels") << " pixel differences - up to 1000 are allowed.</span></p>" << endl;
 
 			modal_window_start("image_"s + test, "Image Comparison ("s + test + ".pov)", type);
 

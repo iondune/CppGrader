@@ -340,6 +340,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const ImageFile = TestsDirectory + TestName + ".png";
 
 	string const RequiredFile = ResultsDirectory + TestName + ".required";
+	string const TimeoutFile = ResultsDirectory + TestName + ".timeout";
 
 	string const MyOutFile = ResultsDirectory + "my" + TestName + ".out";
 	string const MyDiffFile = ResultsDirectory + "my" + TestName + ".diff";
@@ -347,6 +348,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const MyImageDiffFile = ResultsDirectory + "difference_my" + TestName + ".png";
 	string const MyImagePixelsFile = ResultsDirectory + "my" + TestName + ".pixels";
 	string const MyStatusFile = ResultsDirectory + "my" + TestName + ".status";
+	string const MyDurationFile = ResultsDirectory + "my" + TestName + ".duration";
 
 	cout << "Running test '" << TestName << "'" << endl;
 
@@ -354,6 +356,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	{
 		WriteToFile(RequiredFile, "");
 	}
+	WriteToFile(TimeoutFile, FloatToString(test.Timeout));
 
 	vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
 	Args.insert(Args.begin(), "raytrace");
@@ -365,7 +368,9 @@ ETestStatus Grader::DoTest(Test const & test)
 	}
 	cout << endl;
 
-	ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout);
+	float CommandDuration = 0;
+	ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout, CommandDuration);
+	WriteToFile(MyDurationFile, FloatToString(CommandDuration));
 
 	if (CommandStatus == ECommandStatus::Timeout)
 	{

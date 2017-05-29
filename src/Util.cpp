@@ -1,5 +1,6 @@
 
 #include "Util.hpp"
+#include <iomanip>
 
 
 vector<string> SeparateLines(string const & str)
@@ -101,4 +102,13 @@ void WriteToFile(string const & FileName, string const & s, bool const append)
 
 	file << s;
 	file.close();
+}
+
+string FloatToString(float const f, int const precision)
+{
+	std::ostringstream s;
+	// s << std::setiosflags(std::ios::fixed);
+	s << std::setprecision(precision);
+	s << f;
+	return s.str();
 }
