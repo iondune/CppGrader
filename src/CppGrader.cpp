@@ -8,8 +8,34 @@
 #include "Test.hpp"
 #include "Grader.hpp"
 
+#include <deque>
+
 #include <json.hpp>
 
+
+class usage_exception : public std::runtime_error
+{
+
+public:
+
+	usage_exception(string const & what)
+		: std::runtime_error(what)
+	{}
+
+};
+
+class parse_exception : public std::runtime_error
+{
+
+public:
+
+	parse_exception(string const & assignment, string const & what)
+		: Assignment(assignment), std::runtime_error(what)
+	{}
+
+	string Assignment;
+
+};
 
 void PrintUsage(string const & exec_name)
 {
@@ -17,118 +43,148 @@ void PrintUsage(string const & exec_name)
 	cerr << "   or: " << exec_name << " [student] [assignment]" << endl;
 }
 
+vector<Test> ParseSuite(string const & assignment)
+{
+	vector<Test> TestSuite;
+
+	try
+	{
+		std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
+		nlohmann::json j;
+		i >> j;
+		TestSuite = j.get<vector<Test>>();
+	}
+	catch (std::invalid_argument const & e)
+	{
+		throw parse_exception(assignment, e.what());
+	}
+
+	return TestSuite;
+}
+
+void GradeAll()
+{
+	cout << "################################################################################" << endl;
+	cout << "Performing bulk grade of all students/assignments." << endl;
+	cout << endl << endl;
+
+	vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
+	vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
+
+	cout << "Assignments" << endl;
+	cout << "===========" << endl;
+	for (auto assignment : assignments)
+	{
+		cout << assignment << endl;
+	}
+	cout << endl;
+
+	cout << "Students" << endl;
+	cout << "========" << endl;
+	for (auto student : students)
+	{
+		cout << student << endl;
+	}
+	cout << endl;
+
+	for (string const & assignment : assignments)
+	{
+		vector<Test> const TestSuite = ParseSuite(assignment);
+
+		for (string const & student : students)
+		{
+			Grader g(student, assignment, TestSuite);
+			g.Run();
+		}
+
+		cout << endl << endl;
+	}
+}
+
 void GradeStudentAssignment()
 {
 
 }
 
+void Run(std::deque<string> Arguments)
+{
+	if (Arguments.size() == 0)
+	{
+		throw usage_exception("not enough arguments.");
+	}
+
+	if (Arguments.front() == "--all")
+	{
+		GradeAll();
+		return;
+	}
+
+	string student;
+	string assignment;
+
+	while (Arguments.size())
+	{
+		string const Argument = Arguments.front();
+		Arguments.pop_front();
+
+		string Remainder;
+		if (BeginsWith(Argument, "--student=", Remainder))
+		{
+			student = Remainder;
+		}
+		else if (BeginsWith(Argument, "--assignment=", Remainder))
+		{
+			assignment = Remainder;
+		}
+	}
+
+	if (student == "")
+	{
+		throw usage_exception("no student specified.");
+	}
+
+	if (assignment == "")
+	{
+		throw usage_exception("no assignment specified.");
+	}
+
+	vector<Test> const TestSuite = ParseSuite(assignment);
+
+	Grader g(student, assignment, TestSuite);
+	g.Run();
+}
+
 int main(int argc, char const ** argv)
 {
-	vector<string> Arguments;
+	std::deque<string> Arguments;
 	for (int i = 0; i < argc; ++ i)
 	{
 		Arguments.push_back(argv[i]);
 	}
 
-	if (Arguments.size() == 0)
+	string ExecName = "CppGrader";
+	if (Arguments.size() > 0)
 	{
-		PrintUsage("CppGrader");
+		ExecName = Arguments.front();
+		Arguments.pop_front();
+	}
+
+	try
+	{
+		Run(Arguments);
+	}
+	catch (usage_exception const & e)
+	{
+		cout << "Incorrect arguments: " << e.what() << endl;
+		PrintUsage(ExecName);
+		return 1;
+	}
+	catch (parse_exception const & e)
+	{
+		cout << "Failed to parse test suite for assignment '" << e.Assignment << "'" << endl;
+		cout << e.what() << endl;
 		return 1;
 	}
 
-	if (Arguments.size() == 1)
-	{
-		PrintUsage(Arguments[0]);
-		return 1;
-	}
-
-	if (Arguments.size() == 2)
-	{
-		if (Arguments[1] != "all")
-		{
-			PrintUsage(Arguments[0]);
-			return 1;
-		}
-
-		cout << "################################################################################" << endl;
-		cout << "Performing bulk grade of all students/assignments." << endl;
-		cout << endl << endl;
-
-		vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
-		vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
-
-		cout << "Assignments" << endl;
-		cout << "===========" << endl;
-		for (auto assignment : assignments)
-		{
-			cout << assignment << endl;
-		}
-		cout << endl;
-
-		cout << "Students" << endl;
-		cout << "========" << endl;
-		for (auto student : students)
-		{
-			cout << student << endl;
-		}
-		cout << endl;
-
-		for (string const & assignment : assignments)
-		{
-			vector<Test> TestSuite;
-
-			try
-			{
-				std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
-				nlohmann::json j;
-				i >> j;
-				TestSuite = j.get<vector<Test>>();
-			}
-			catch (std::invalid_argument const & e)
-			{
-				cout << "Failed to parse test suite for assignment '" << assignment << "'" << endl;
-				cout << e.what() << endl;
-				return 1;
-			}
-
-			for (string const & student : students)
-			{
-				Grader g(student, assignment, TestSuite);
-				g.Run();
-			}
-
-			cout << endl << endl;
-		}
-		return 0;
-	}
-
-	if (Arguments.size() == 3)
-	{
-		string const student = Arguments[1];
-		string const assignment = Arguments[2];
-
-		vector<Test> TestSuite;
-
-		try
-		{
-			std::ifstream i(AllTestsDirectory + assignment + "/" + "tests.json");
-			nlohmann::json j;
-			i >> j;
-			TestSuite = j.get<vector<Test>>();
-		}
-		catch (std::invalid_argument const & e)
-		{
-			cout << "Failed to parse test suite for assignment '" << assignment << "'" << endl;
-			cout << e.what() << endl;
-			return 1;
-		}
-
-		Grader g(student, assignment, TestSuite);
-		g.Run();
-
-		return 0;
-	}
-
-	PrintUsage(Arguments[0]);
-	return 1;
+	return 0;
 }

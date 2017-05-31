@@ -112,3 +112,19 @@ string FloatToString(float const f, int const precision)
 	s << f;
 	return s.str();
 }
+
+bool BeginsWith(string const & s, string const & prefix, string & remainder)
+{
+	if (s.size() < prefix.size())
+	{
+		return false;
+	}
+
+	if (s.substr(0, prefix.size()) == prefix)
+	{
+		remainder = s.substr(prefix.size());
+		return true;
+	}
+
+	return false;
+}
