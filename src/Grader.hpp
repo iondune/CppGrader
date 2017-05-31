@@ -27,6 +27,7 @@ public:
 	{}
 
 };
+
 class build_exception : public std::runtime_error
 {
 
