@@ -157,6 +157,7 @@ void Run(std::deque<string> Arguments)
 		for (string const & student : students)
 		{
 			Grader g(student, assignment, TestSuite);
+			g.Regrade = Regrade;
 			g.Run();
 		}
 

@@ -94,10 +94,17 @@ void Grader::RunGit()
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
-	if (fs::is_regular_file(ResultsDirectory + "status") && ! Regrade)
+	if (fs::is_regular_file(ResultsDirectory + "status"))
 	{
 		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
-		throw skip_exception("Already graded.");
+		if (Regrade)
+		{
+			cout << "But --regrade flag specified, grading again." << endl;
+		}
+		else
+		{
+			throw skip_exception("Already graded.");
+		}
 	}
 
 	try_command_redirect({"date"}, ResultsDirectory + "last_run", sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
