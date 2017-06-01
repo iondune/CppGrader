@@ -29,7 +29,7 @@ void IndexBuilder::GenerateAssignmentIndex()
 	File << "<tr>" << endl;
 	File << "<th>Commit</th>" << endl;
 	File << "<th>Status</th>" << endl;
-	File << "<th>Time</th>" << endl;
+	File << "<th>Commit Date/Time</th>" << endl;
 	File << "</tr>" << endl;
 	File << "</thead>" << endl;
 	File << "<tbody>" << endl;
@@ -93,7 +93,7 @@ void IndexBuilder::GenerateStudentIndex()
 	File << "<th>Assignment</th>" << endl;
 	File << "<th>Status</th>" << endl;
 	File << "<th>Latest Graded Commit</th>" << endl;
-	File << "<th>Latest Commit Date</th>" << endl;
+	File << "<th>Latest Commit Date/Time</th>" << endl;
 	File << "</tr>" << endl;
 	File << "</thead>" << endl;
 	File << "<tbody>" << endl;
