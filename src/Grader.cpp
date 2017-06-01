@@ -66,7 +66,7 @@ void Grader::Run()
 		cout << "Report created at: " << ResultsDirectory + "report.html" << endl;
 
 		fs::current_path(AssignmentResultsDirectory);
-		IndexBuilder ib(student, assignment);
+		IndexBuilder ib(student, assignment, RepoDirectory);
 		ib.GenerateAssignmentIndex();
 		cout << "Assignment index created at: " << AssignmentResultsDirectory + "index.html" << endl;
 

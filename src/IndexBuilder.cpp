@@ -1,12 +1,14 @@
 
 #include "IndexBuilder.hpp"
 #include "FileSystem.hpp"
+#include "Process.hpp"
 
 
-IndexBuilder::IndexBuilder(string const & student, string const & assignment)
+IndexBuilder::IndexBuilder(string const & student, string const & assignment, string const & repoDirectory)
 {
 	this->Student = student;
 	this->Assignment = assignment;
+	this->RepoDirectory = repoDirectory;
 }
 
 void IndexBuilder::GenerateAssignmentIndex()
@@ -27,42 +29,40 @@ void IndexBuilder::GenerateAssignmentIndex()
 	File << "<tr>" << endl;
 	File << "<th>Commit</th>" << endl;
 	File << "<th>Status</th>" << endl;
+	File << "<th>Time</th>" << endl;
 	File << "</tr>" << endl;
 	File << "</thead>" << endl;
 	File << "<tbody>" << endl;
 
-	vector<string> pairs = ReadAsLines("list");
-	std::reverse(pairs.begin(), pairs.end());
+	vector<CommitInfo> const Commits = GetCommits();
 
-	for (string pair : pairs)
+	for (CommitInfo const & Commit : Commits)
 	{
-		vector<string> split = Explode(pair, ' ');
+		File << "<tr>" << endl;
+		File << "<td><a href=\"" << Commit.Hash << "/report.html\">" << Commit.Hash << "</a></td>" << endl;
 
-		if (split.size() == 2)
+		File << "<td>";
+		if (Commit.Status == "passed")
 		{
-			string const hash = split[0];
-			string const status = split[1];
-			File << "<tr><td><a href=\"" << hash << "/report.html\">" << hash << "</a></td><td>" << endl;
-
-			if (status == "passed")
-			{
-				File << "<span class=\"label label-success\">Passed</span>" << endl;
-			}
-			else if (status == "test_failure")
-			{
-				File << "<span class=\"label label-warning\">Test Failure</span>" << endl;
-			}
-			else if (status == "build_failure")
-			{
-				File << "<span class=\"label label-danger\">Build Failure</span>" << endl;
-			}
-			else
-			{
-				File << "<span class=\"label label-default\">" << status << "</span>" << endl;
-			}
-
-			File << "</td></tr>" << endl;
+			File << "<span class=\"label label-success\">Passed</span>";
 		}
+		else if (Commit.Status == "test_failure")
+		{
+			File << "<span class=\"label label-warning\">Test Failure</span>";
+		}
+		else if (Commit.Status == "build_failure")
+		{
+			File << "<span class=\"label label-danger\">Build Failure</span>";
+		}
+		else
+		{
+			File << "<span class=\"label label-default\">" << Commit.Status << "</span>";
+		}
+		File << "</td>" << endl;
+
+		File << "<td>" << Commit.DateString << "</td>" << endl;
+
+		File << "</tr>" << endl;
 	}
 
 	File << "</tbody></table>" << endl;
@@ -85,6 +85,7 @@ void IndexBuilder::GenerateStudentIndex()
 	File << "<th>Assignment</th>" << endl;
 	File << "<th>Status</th>" << endl;
 	File << "<th>Latest Graded Commit</th>" << endl;
+	File << "<th>Latest Commit Date</th>" << endl;
 	File << "</tr>" << endl;
 	File << "</thead>" << endl;
 	File << "<tbody>" << endl;
@@ -93,51 +94,56 @@ void IndexBuilder::GenerateStudentIndex()
 
 	for (string const & assignment : assignments)
 	{
-		File << "<tr><td><a href=\"" << assignment << "/\">" << assignment << "</a></td><td>" << endl;
+		File << "<tr>" << endl;
+		File << "<td><a href=\"" << assignment << "/\">" << assignment << "</a></td>" << endl;
 
-		vector<string> pairs = ReadAsLines(assignment + "/" + "list");
+		fs::current_path(assignment);
+		vector<CommitInfo> const Commits = GetCommits();
+		fs::current_path("..");
 
 		string hash = "none";
 		string status = "???";
+		string date = "???";
 
-		if (pairs.size())
+		if (Commits.size())
 		{
-			vector<string> split = Explode(pairs.back(), ' ');
+			CommitInfo const Commit = Commits.front();
 
-			if (split.size() == 2)
-			{
-				hash = split[0];
-				status = split[1];
-			}
+			hash = Commit.Hash;
+			status = Commit.Status;
+			date = Commit.DateString;
 		}
 
-
+		File << "<td>";
 		if (status == "passed")
 		{
-			File << "<span class=\"label label-success\">Passed</span>" << endl;
+			File << "<span class=\"label label-success\">Passed</span>";
 		}
 		else if (status == "test_failure")
 		{
-			File << "<span class=\"label label-warning\">Test Failure</span>" << endl;
+			File << "<span class=\"label label-warning\">Test Failure</span>";
 		}
 		else if (status == "build_failure")
 		{
-			File << "<span class=\"label label-danger\">Build Failure</span>" << endl;
+			File << "<span class=\"label label-danger\">Build Failure</span>";
 		}
 		else
 		{
-			File << "<span class=\"label label-default\">" << status << "</span>" << endl;
+			File << "<span class=\"label label-default\">" << status << "</span>";
 		}
+		File << "</td>" << endl;
 
 		if (hash != "none")
 		{
-			File << "</td><td><a href=\"" << assignment << "/" << hash << "/report.html\">" << hash << "</a>" << endl;
+			File << "<td><a href=\"" << assignment << "/" << hash << "/report.html\">" << hash << "</a></td>" << endl;
 		}
 		else
 		{
-			File << "</td><td>" << hash << endl;
+			File << "<td>" << hash << "</td>" << endl;
 		}
-		File << "</td></tr>" << endl;
+		File << "<td>" << date << "</td>" << endl;
+
+		File << "</tr>" << endl;
 	}
 
 	File << "</tbody></table>" << endl;
@@ -184,4 +190,54 @@ void IndexBuilder::GenerateCompleteIndex()
 	Cat(TemplateDirectory + "bottom.html", File);
 
 	File.close();
+}
+
+vector<CommitInfo> IndexBuilder::GetCommits()
+{
+	vector<CommitInfo> Commits;
+
+	vector<string> Lines = ReadAsLines("list");
+
+	for (string const & Line : Lines)
+	{
+		vector<string> Fields = Explode(Line, ' ');
+
+		if (Fields.size() >= 2)
+		{
+			string const Hash = Fields[0];
+			string const Status = Fields[1];
+
+			string const CommitDate = command_output({"git", "log", "-1", "--pretty=format:%ct", Hash, "--"}, sp::environment(std::map<string, string>({{"GIT_DIR", RepoDirectory + ".git/"}})));
+			time_t const Date = std::stoi(CommitDate);
+			string const DateString = TrimWhitespace(std::ctime(&Date));
+
+			CommitInfo Info;
+			Info.Hash = Hash;
+			Info.Status = Status;
+			Info.Date = Date;
+			Info.DateString = DateString;
+
+			auto it = std::find_if(Commits.begin(), Commits.end(), [Info](CommitInfo const & other) { return Info.Hash == other.Hash; });
+
+			if (it != Commits.end())
+			{
+				// cout << "Found duplicate record for hash " << Hash << ", overwriting." << endl;
+				*it = Info;
+			}
+			else
+			{
+				Commits.push_back(Info);
+			}
+		}
+	}
+
+	std::sort(Commits.begin(), Commits.end());
+	std::reverse(Commits.begin(), Commits.end());
+
+	// for (CommitInfo const & Info : Commits)
+	// {
+	// 	cout << "Commit Record: " << Info.Hash << ", " << Info.Status << ", " << Info.DateString << endl;
+	// }
+
+	return Commits;
 }
