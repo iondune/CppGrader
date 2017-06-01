@@ -1,34 +1,13 @@
 
 #pragma once
 
+#include "Util.hpp"
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
 
 
-namespace
-{
-
-bool IsHidden(fs::path const & p)
-{
-	fs::path::string_type const name = p.filename();
-	return (
-		name != ".." &&
-		name != "." &&
-		name.size() > 0 &&
-		name[0] == '.'
-	);
-}
-
-bool RemoveIfExists(fs::path const & p)
-{
-	if (fs::is_regular_file(p))
-	{
-		fs::remove(p);
-		return true;
-	}
-
-	return false;
-}
-
-}
+bool IsHidden(fs::path const & p);
+bool RemoveIfExists(fs::path const & p);
+string GetExtension(string const & Path);
+vector<fs::path> FindAllWithExtension(fs::path const & look_in, string const & extension);
