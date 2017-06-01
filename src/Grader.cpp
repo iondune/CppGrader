@@ -385,6 +385,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const MyImagePixelsFile = ResultsDirectory + "my" + TestName + ".pixels";
 	string const MyStatusFile = ResultsDirectory + "my" + TestName + ".status";
 	string const MyDurationFile = ResultsDirectory + "my" + TestName + ".duration";
+	string const MyArgsFile = ResultsDirectory + "my" + TestName + ".args";
 
 	cout << "Running test '" << TestName << "'" << endl;
 
@@ -403,6 +404,7 @@ ETestStatus Grader::DoTest(Test const & test)
 		cout << " '" << Arg << "'";
 	}
 	cout << endl;
+	required_command({"cp", ArgsFile, MyArgsFile});
 
 	float CommandDuration = 0;
 	ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout, CommandDuration);

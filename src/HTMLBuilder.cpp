@@ -125,34 +125,44 @@ void HTMLBuilder::TextTests()
 	File << "<tr>" << endl;
 	File << "<th>Test</th>" << endl;
 	File << "<th>Status</th>" << endl;
+	File << "<th>Arguments</th>" << endl;
 	File << "</tr>" << endl;
 	File << "</thead>" << endl;
 	File << "<tbody>" << endl;
 
 	for (auto test : Tests)
 	{
-		File << "<tr><td>" << test << "</td><td>" << endl;
+		File << "<tr>" << endl << "<td>" << test << "</td>" << endl;
 
 		string const test_status = ReadTrimmed("my"s + test + ".status");
 
+		File << "<td>" << endl;
 		if (test_status == "pass")
 		{
-			File << "<span class=\"label label-success\">Passed</span>" << endl;
+			File << "<span class=\"label label-success\">Passed</span>";
 		}
 		else if (test_status == "timeout")
 		{
-			File << "<span class=\"label label-danger\">Timeout</span>" << endl;
+			File << "<span class=\"label label-danger\">Timeout</span>";
 		}
 		else if (test_status == "failure")
 		{
 			ModalWindowStart("diff_"s + test, "Failed - Diff Results ("s + test + ")", "danger");
 			File << "<pre><code>";
 			File << ReadTrimmed("my"s + test + ".diff");
-			File << "</code></pre>" << endl;
+			File << "</code></pre>";
 			ModalWindowEnd();
 		}
+		File << "</td>" << endl;
 
-		File << "</td></tr>" << endl;
+		File << "<td>";
+		if (fs::is_regular_file("my"s + test + ".args"))
+		{
+			File << "<pre><code>" << ReadTrimmed("my"s + test + ".args") << "</code></pre>";
+		}
+		File << "</td>" << endl;
+
+		File << "</tr>" << endl;
 	}
 
 	File << "</tbody></table>" << endl;
@@ -201,6 +211,11 @@ void HTMLBuilder::ImageTests()
 		File << "</td><td>" << endl;
 
 		File << "<p>Test took " << ReadTrimmed("my"s + test + ".duration") << "s, timeout was " << ReadTrimmed(test + ".timeout") << "s.</p>" << endl;
+		if (fs::is_regular_file("my"s + test + ".args"))
+		{
+			File << "<p>Arguments:</p><p><pre><code>" << ReadTrimmed("my"s + test + ".args") << "</code></pre></p>" << endl;
+		}
+
 		if (! fs::is_regular_file(ImageFile))
 		{
 			File << "<p><span class=\"text-danger\">Image for " << test << " failed - no image produced.</span></p>" << endl;
