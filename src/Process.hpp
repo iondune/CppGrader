@@ -55,7 +55,7 @@ string required_command_output(std::initializer_list<string> const & cmd, Args&&
 }
 
 template <typename... Args>
-bool try_command_redirect(std::initializer_list<string> const & cmd, string const & filename, Args&&... args)
+bool try_command_redirect(std::vector<string> const & cmd, string const & filename, Args&&... args)
 {
 	FILE * file = fopen(filename.c_str(), "w");
 	if (! file)

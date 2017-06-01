@@ -101,11 +101,6 @@ void GradeAll()
 	}
 }
 
-void GradeStudentAssignment()
-{
-
-}
-
 void Run(std::deque<string> Arguments)
 {
 	if (Arguments.size() == 0)
@@ -121,6 +116,7 @@ void Run(std::deque<string> Arguments)
 
 	string student;
 	string assignment;
+	bool Regrade = false;
 
 	while (Arguments.size())
 	{
@@ -135,6 +131,10 @@ void Run(std::deque<string> Arguments)
 		else if (BeginsWith(Argument, "--assignment=", Remainder))
 		{
 			assignment = Remainder;
+		}
+		else if (Argument == "--regrade")
+		{
+			Regrade = true;
 		}
 	}
 
@@ -151,6 +151,7 @@ void Run(std::deque<string> Arguments)
 	vector<Test> const TestSuite = ParseSuite(assignment);
 
 	Grader g(student, assignment, TestSuite);
+	g.Regrade = Regrade;
 	g.Run();
 }
 

@@ -94,7 +94,7 @@ void Grader::RunGit()
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
-	if (fs::is_regular_file(ResultsDirectory + "status"))
+	if (fs::is_regular_file(ResultsDirectory + "status") && ! Regrade)
 	{
 		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
 		throw skip_exception("Already graded.");
@@ -166,7 +166,36 @@ void Grader::RunBuild()
 	}
 	else if (BuildType == EBuildType::Auto)
 	{
-		throw build_exception("gcc *.cpp auto-build not supported.");
+		vector<string> Args;
+		Args.push_back("gcc");
+
+		vector<fs::path> cppfiles = FindAllWithExtension("src/", "cpp");
+
+		if (! cppfiles.size())
+		{
+			throw build_exception("no *.cpp files found to build.");
+		}
+
+		for (auto path : cppfiles)
+		{
+			cout << "Found .cpp file to build: " << path << endl;
+			Args.push_back(path.string());
+		}
+		Args.push_back("-O3");
+		Args.push_back("-o");
+		Args.push_back("raytrace");
+
+		cout << "- Args are:";
+		for (string const & Arg : Args)
+		{
+			cout << " '" << Arg << "'";
+		}
+		cout << endl;
+
+		if (! try_command_redirect(Args, ResultsDirectory + "gcc_output"))
+		{
+			throw build_exception("gcc build failed.");
+		}
 	}
 
 	if (! fs::is_regular_file("raytrace"))

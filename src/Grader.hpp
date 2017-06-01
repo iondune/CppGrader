@@ -48,6 +48,8 @@ public:
 
 	void Run();
 
+	bool Regrade = false;
+
 protected:
 
 	string const student;

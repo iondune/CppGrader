@@ -47,7 +47,7 @@ vector<fs::path> FindAllWithExtension(fs::path const & look_in, string const & e
 
 		if (! IsHidden(p))
 		{
-			if (fs::is_regular_file(p) && GetExtension(p.string()) == "cpp")
+			if (fs::is_regular_file(p) && GetExtension(p.string()) == extension)
 			{
 				files.push_back(p);
 			}
