@@ -406,6 +406,11 @@ ETestStatus Grader::DoTest(Test const & test)
 	cout << endl;
 	required_command({"cp", ArgsFile, MyArgsFile});
 
+	if (fs::is_regular_file("output.png"))
+	{
+		fs::remove("output.png");
+	}
+
 	float CommandDuration = 0;
 	ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout, CommandDuration);
 	WriteToFile(MyDurationFile, FloatToString(CommandDuration));
