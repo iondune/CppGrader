@@ -77,6 +77,14 @@ bool HTMLBuilder::BuildInfo()
 			File << ReadTrimmed("make_output");
 			File << "</code></pre>" << endl;
 		}
+
+		if (fs::is_regular_file("gcc_output"))
+		{
+			File << "<p>gcc output:</p>" << endl;
+			File << "<pre><code>";
+			File << ReadTrimmed("gcc_output");
+			File << "</code></pre>" << endl;
+		}
 	}
 	else
 	{
