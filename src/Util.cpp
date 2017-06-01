@@ -128,3 +128,14 @@ bool BeginsWith(string const & s, string const & prefix, string & remainder)
 
 	return false;
 }
+
+string ReplaceAll(string subject, string const & search, string const & with)
+{
+	size_t pos = 0;
+	while ((pos = subject.find(search, pos)) != string::npos)
+	{
+		subject.replace(pos, search.length(), with);
+		pos += with.length();
+	}
+	return subject;
+}

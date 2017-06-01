@@ -11,6 +11,7 @@ IndexBuilder::IndexBuilder(string const & student, string const & assignment)
 
 void IndexBuilder::GenerateAssignmentIndex()
 {
+	std::ofstream File;
 	File.open("index.html");
 
 	Cat(TemplateDirectory + "top1.html", File);
@@ -73,6 +74,7 @@ void IndexBuilder::GenerateAssignmentIndex()
 
 void IndexBuilder::GenerateStudentIndex()
 {
+	std::ofstream File;
 	File.open("table.html");
 
 	File << "<p>Student: " << Student << "</p>" << endl;
@@ -157,18 +159,10 @@ void IndexBuilder::GenerateStudentIndex()
 	File.close();
 }
 
-std::string replace_all(std::string subject, std::string const & search, std::string const & with) {
-	size_t pos = 0;
-	while ((pos = subject.find(search, pos)) != std::string::npos)
-	{
-		subject.replace(pos, search.length(), with);
-		pos += with.length();
-	}
-	return subject;
-}
 
 void IndexBuilder::GenerateCompleteIndex()
 {
+	std::ofstream File;
 	File.open("all.html");
 
 	Cat(TemplateDirectory + "top1.html", File);
@@ -180,7 +174,7 @@ void IndexBuilder::GenerateCompleteIndex()
 	for (string const & student : students)
 	{
 		string table = ReadAsString(student + "/table.html");
-		table = replace_all(table, "href=\"", "href=\"" + student + "/");
+		table = ReplaceAll(table, "href=\"", "href=\"" + student + "/");
 		File << table;
 
 		string const repo = ReadAsString(AllStudentsDirectory + student + "/" + "link");

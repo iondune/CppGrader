@@ -11,8 +11,11 @@ Grader::Grader(string const & student_, string const & assignment_, vector<Test>
 	: student(student_), assignment(assignment_), TestSuite(tests)
 {
 	StudentDirectory = AllStudentsDirectory + student + "/";
-	RepoDirectory = StudentDirectory + "repo/";
 	TestsDirectory = AllTestsDirectory + assignment + "/";
+
+	RepoDirectory = StudentDirectory + "repo/";
+
+	AssignmentResultsDirectory = SiteDirectory + student + "/" + assignment + "/";
 }
 
 void Grader::Run()
@@ -67,11 +70,11 @@ void Grader::Run()
 		ib.GenerateAssignmentIndex();
 		cout << "Assignment index created at: " << AssignmentResultsDirectory + "index.html" << endl;
 
-		fs::current_path("..");
+		fs::current_path(SiteDirectory + student);
 		ib.GenerateStudentIndex();
 		cout << "Student index created at: " << fs::current_path().string() + "/index.html" << endl;
 
-		fs::current_path("..");
+		fs::current_path(SiteDirectory);
 		ib.GenerateCompleteIndex();
 		cout << "Complete index created at: " << fs::current_path().string() + "/index.html" << endl;
 	}
@@ -87,7 +90,6 @@ void Grader::RunGit()
 {
 	CurrentHash = DoGitUpdate(assignment);
 
-	AssignmentResultsDirectory = SiteDirectory + student + "/" + assignment + "/";
 	ResultsDirectory = AssignmentResultsDirectory + CurrentHash + "/";
 
 	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;

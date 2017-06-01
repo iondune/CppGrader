@@ -21,6 +21,4 @@ protected:
 	string Student;
 	string Assignment;
 
-	std::ofstream File;
-
 };

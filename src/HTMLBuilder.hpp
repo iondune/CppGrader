@@ -18,20 +18,19 @@ protected:
 
 	string Student;
 	string Assignment;
-
-	string status;
+	string Status;
 
 	std::ofstream File;
 
-	void header_info(string const & student, string const & assignment);
-	bool build_info();
-	void text_tests();
-	void image_tests();
+	void HeaderInfo();
+	bool BuildInfo();
+	void TextTests();
+	void ImageTests();
 
-	void cleanup();
+	void Cleanup();
 
-	void collapse_button(string const & id);
-	void modal_window_start(string const & id, string const & button_label, string const & btn_class);
-	void modal_window_end();
+	void CollapseButton(string const & id);
+	void ModalWindowStart(string const & id, string const & button_label, string const & btn_class);
+	void ModalWindowEnd();
 
 };
