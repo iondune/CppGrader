@@ -62,45 +62,6 @@ vector<Test> ParseSuite(string const & assignment)
 	return TestSuite;
 }
 
-void GradeAll()
-{
-	cout << "################################################################################" << endl;
-	cout << "Performing bulk grade of all students/assignments." << endl;
-	cout << endl << endl;
-
-	vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
-	vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
-
-	cout << "Assignments" << endl;
-	cout << "===========" << endl;
-	for (auto assignment : assignments)
-	{
-		cout << assignment << endl;
-	}
-	cout << endl;
-
-	cout << "Students" << endl;
-	cout << "========" << endl;
-	for (auto student : students)
-	{
-		cout << student << endl;
-	}
-	cout << endl;
-
-	for (string const & assignment : assignments)
-	{
-		vector<Test> const TestSuite = ParseSuite(assignment);
-
-		for (string const & student : students)
-		{
-			Grader g(student, assignment, TestSuite);
-			g.Run();
-		}
-
-		cout << endl << endl;
-	}
-}
-
 void Run(std::deque<string> Arguments)
 {
 	if (Arguments.size() == 0)
@@ -108,14 +69,10 @@ void Run(std::deque<string> Arguments)
 		throw usage_exception("not enough arguments.");
 	}
 
-	if (Arguments.front() == "--all")
-	{
-		GradeAll();
-		return;
-	}
-
 	string student;
 	string assignment;
+
+	bool All = false;
 	bool Regrade = false;
 
 	while (Arguments.size())
@@ -132,27 +89,79 @@ void Run(std::deque<string> Arguments)
 		{
 			assignment = Remainder;
 		}
+		else if (Argument == "--all")
+		{
+			All = true;
+		}
 		else if (Argument == "--regrade")
 		{
 			Regrade = true;
 		}
 	}
 
+	vector<string> students;
+	vector<string> assignments;
+
 	if (student == "")
 	{
-		throw usage_exception("no student specified.");
+		if (All)
+		{
+			students = ReadAsLines(AllStudentsDirectory + "list");
+
+			cout << "Students" << endl;
+			cout << "========" << endl;
+			for (auto student : students)
+			{
+				cout << student << endl;
+			}
+			cout << endl;
+		}
+		else
+		{
+			throw usage_exception("no student specified.");
+		}
+	}
+	else
+	{
+		students.push_back(student);
 	}
 
 	if (assignment == "")
 	{
-		throw usage_exception("no assignment specified.");
+		if (All)
+		{
+			assignments = ReadAsLines(ExecDirectory + "assignments");
+
+			cout << "Assignments" << endl;
+			cout << "===========" << endl;
+			for (auto assignment : assignments)
+			{
+				cout << assignment << endl;
+			}
+			cout << endl;
+		}
+		else
+		{
+			throw usage_exception("no assignment specified.");
+		}
+	}
+	else
+	{
+		assignments.push_back(assignment);
 	}
 
-	vector<Test> const TestSuite = ParseSuite(assignment);
+	for (string const & assignment : assignments)
+	{
+		vector<Test> const TestSuite = ParseSuite(assignment);
 
-	Grader g(student, assignment, TestSuite);
-	g.Regrade = Regrade;
-	g.Run();
+		for (string const & student : students)
+		{
+			Grader g(student, assignment, TestSuite);
+			g.Run();
+		}
+
+		cout << endl << endl;
+	}
 }
 
 int main(int argc, char const ** argv)
