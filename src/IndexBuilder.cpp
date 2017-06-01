@@ -75,7 +75,15 @@ void IndexBuilder::GenerateAssignmentIndex()
 void IndexBuilder::GenerateStudentIndex()
 {
 	std::ofstream File;
-	File.open("table.html");
+	File.open("index.html");
+
+	std::ofstream Parent;
+	Parent.open("parent_row.html");
+
+	Cat(TemplateDirectory + "top1.html", File);
+	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
+	Cat(TemplateDirectory + "top2.html", File);
+	File << "<h1>[CPE 473] All Program Grade Results</h1>" << endl;
 
 	File << "<p>Student: " << Student << "</p>" << endl;
 
@@ -89,6 +97,9 @@ void IndexBuilder::GenerateStudentIndex()
 	File << "</tr>" << endl;
 	File << "</thead>" << endl;
 	File << "<tbody>" << endl;
+
+	Parent << "<tr>" << endl;
+	Parent << "<td><a href=\"" << Student << "/\">" << Student << "</a></td>" << endl;
 
 	vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
 
@@ -115,23 +126,29 @@ void IndexBuilder::GenerateStudentIndex()
 		}
 
 		File << "<td>";
+		Parent << "<td>";
 		if (status == "passed")
 		{
 			File << "<span class=\"label label-success\">Passed</span>";
+			Parent << "<a href=\"" << Student << "/" << assignment << "/\"" << "<span class=\"label label-success\">Passed</span>" << "</a></td>";
 		}
 		else if (status == "test_failure")
 		{
 			File << "<span class=\"label label-warning\">Test Failure</span>";
+			Parent << "<a href=\"" << Student << "/" << assignment << "/\"" << "<span class=\"label label-warning\">Test Failure</span>" << "</a></td>";
 		}
 		else if (status == "build_failure")
 		{
 			File << "<span class=\"label label-danger\">Build Failure</span>";
+			Parent << "<a href=\"" << Student << "/" << assignment << "/\"" << "<span class=\"label label-danger\">Build Failure</span>" << "</a></td>";
 		}
 		else
 		{
 			File << "<span class=\"label label-default\">" << status << "</span>";
+			Parent << "<a href=\"" << Student << "/" << assignment << "/\"" << "<span class=\"label label-default\">" << status << "</span>" << "</a></td>";
 		}
 		File << "</td>" << endl;
+		Parent << "</td>" << endl;
 
 		if (hash != "none")
 		{
@@ -148,21 +165,15 @@ void IndexBuilder::GenerateStudentIndex()
 
 	File << "</tbody></table>" << endl;
 
-	File.close();
-
-
-	File.open("index.html");
-
-	Cat(TemplateDirectory + "top1.html", File);
-	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
-	Cat(TemplateDirectory + "top2.html", File);
-	File << "<h1>[CPE 473] All Program Grade Results</h1>" << endl;
-	Cat("table.html", File);
 	string const repo = ReadAsString(AllStudentsDirectory + Student + "/" + "link");
 	File << "<p>Repo: <a href=\"" << repo << "\">" << repo << "</a></p>" << endl;
+	Parent << "<td><a href=\"" << repo << "\">Repo</a></td>" << endl;
+	Parent << "</tr>" << endl;
+
 	Cat(TemplateDirectory + "bottom.html", File);
 
 	File.close();
+	Parent.close();
 }
 
 
@@ -176,17 +187,28 @@ void IndexBuilder::GenerateCompleteIndex()
 	Cat(TemplateDirectory + "top2.html", File);
 	File << "<h1>[CPE 473] All Student Grade Results</h1>" << endl;
 
+	vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
+
+	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
+	File << "<thead>" << endl;
+	File << "<tr>" << endl;
+	File << "<th>Student</th>" << endl;
+	for (string const & assignment : assignments)
+	{
+		File << "<th>" << assignment << "</th>" << endl;
+	}
+	File << "<th>Repo</th>" << endl;
+	File << "</tr>" << endl;
+	File << "</thead>" << endl;
+	File << "<tbody>" << endl;
+
 	vector<string> students = ReadAsLines(AllStudentsDirectory + "list");
 	for (string const & student : students)
 	{
-		string table = ReadAsString(student + "/table.html");
-		table = ReplaceAll(table, "href=\"", "href=\"" + student + "/");
-		File << table;
-
-		string const repo = ReadAsString(AllStudentsDirectory + student + "/" + "link");
-		File << "<p>Repo: <a href=\"" << repo << "\">" << repo << "</a></p>" << endl;
-		File << "<hr />" << endl;
+		string const row = ReadAsString(student + "/parent_row.html");
+		File << row;
 	}
+	File << "</tbody></table>" << endl;
 	Cat(TemplateDirectory + "bottom.html", File);
 
 	File.close();
