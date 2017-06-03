@@ -6,6 +6,8 @@
 #include "HTMLBuilder.hpp"
 #include "IndexBuilder.hpp"
 
+#include <chrono>
+
 
 Grader::Grader(string const & student_, string const & assignment_, vector<Test> const & tests)
 	: student(student_), assignment(assignment_), TestSuite(tests)
@@ -19,26 +21,88 @@ Grader::Grader(string const & student_, string const & assignment_, vector<Test>
 	AssignmentResultsDirectory = StudentResultsDirectory + assignment + "/";
 
 	LogFile.open(StudentResultsDirectory + "logfile", std::ios_base::app);
+	LogFile << "################################################################################" << endl;
+	LogFile << endl;
+	LogFile << "Grading assignment '" << assignment << "' for student '" << student << "'" << endl;
+	auto current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	LogFile << "Current time: " << std::ctime(&current_time);
+	LogFile << endl;
+}
+
+string Grader::GetLatestHash()
+{
+	fs::current_path(RepoDirectory);
+
+	LogFile << "Checking git status" << endl;
+	LogFile << "===================" << endl;
+	required_command({"git", "fetch", "origin", "master", "--tags"}, LogFile);
+	LogFile << endl;
+
+	vector<string> tags = SeparateLines(required_command_output({"git", "tag", "-l"}));
+
+	LogFile << "git tags" << endl;
+	LogFile << "========" << endl;
+	if (tags.size())
+	{
+		for (auto tag : tags)
+		{
+			LogFile << tag << endl;
+		}
+	}
+	else
+	{
+		LogFile << "No tags." << endl;
+	}
+	LogFile << endl;
+
+	for (auto tag : tags)
+	{
+		if (tag == assignment)
+		{
+			LogFile << "Tag found for assignment found: " << tag << endl;
+			return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", tag}));
+		}
+	}
+
+	LogFile << "Tag not found for assignment (" << assignment << "), grading master" << endl;
+	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "master"}));
+}
+
+bool Grader::CheckWorkToDo(string const & hash)
+{
+	CurrentHash = hash;
+
+	ResultsDirectory = AssignmentResultsDirectory + CurrentHash + "/";
+
+	LogFile << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
+	fs::create_directories(ResultsDirectory);
+	if (fs::is_regular_file(ResultsDirectory + "status"))
+	{
+		LogFile << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
+		return false;
+	}
+
+	return true;
 }
 
 void Grader::Run()
+{
+	GradeAssignment();
+	WriteReports();
+}
+
+void Grader::GradeAssignment()
 {
 	try
 	{
 		fs::current_path(RepoDirectory);
 
-		RunGit();
+		DoGitUpdate();
+		WriteStatusFiles();
 		RunBuild();
 		if (RunTests())
 		{
-			WriteToFile(ResultsDirectory + "status", "passed");
-			WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " passed\n", true);
-			std::stringstream s;
-			s << required_command_output({"date"}, sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
-			s << endl;
-			s << required_command_output({"git", "log", "-n", "1", "--date=local", "HEAD"});
-			s << endl;
-			WriteToFile(ResultsDirectory + "passfile", s.str());
+			WritePassFile();
 		}
 		else
 		{
@@ -46,8 +110,6 @@ void Grader::Run()
 			WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " test_failure\n", true);
 		}
 	}
-	catch (skip_exception const & e)
-	{}
 	catch (build_exception const & e)
 	{
 		LogFile << "Build failure." << endl;
@@ -60,7 +122,10 @@ void Grader::Run()
 		LogFile << "Unexpected exception occurred during grading." << endl;
 		LogFile << e.what() << endl;
 	}
+}
 
+void Grader::WriteReports()
+{
 	try
 	{
 		fs::current_path(ResultsDirectory);
@@ -88,28 +153,8 @@ void Grader::Run()
 	}
 }
 
-
-void Grader::RunGit()
+void Grader::WriteStatusFiles()
 {
-	CurrentHash = DoGitUpdate(assignment);
-
-	ResultsDirectory = AssignmentResultsDirectory + CurrentHash + "/";
-
-	LogFile << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
-	fs::create_directories(ResultsDirectory);
-	if (fs::is_regular_file(ResultsDirectory + "status"))
-	{
-		LogFile << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
-		if (Regrade)
-		{
-			LogFile << "But --regrade flag specified, grading again." << endl;
-		}
-		else
-		{
-			throw skip_exception("Already graded.");
-		}
-	}
-
 	try_command_redirect({"date"}, ResultsDirectory + "last_run", sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
 	try_command_redirect({"tree", "--filelimit", "32"}, ResultsDirectory + "directory_listing");
 	try_command_redirect({"git", "log", "-n", "1", "--date=local", "HEAD"}, ResultsDirectory + "current_commit");
@@ -256,6 +301,18 @@ bool Grader::RunTests()
 	return AllTestsPassed;
 }
 
+void Grader::WritePassFile()
+{
+	WriteToFile(ResultsDirectory + "status", "passed");
+	WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " passed\n", true);
+	std::stringstream s;
+	s << required_command_output({"date"}, sp::environment(std::map<string, string>({{"TZ", "America/Los_Angeles"}})));
+	s << endl;
+	s << required_command_output({"git", "log", "-n", "1", "--date=local", "HEAD"});
+	s << endl;
+	WriteToFile(ResultsDirectory + "passfile", s.str());
+}
+
 
 /////////////
 // Helpers //
@@ -282,58 +339,21 @@ void Grader::CopyInputFiles()
 	}
 }
 
-string Grader::DoGitUpdate(string const & assignment)
+void Grader::DoGitUpdate()
 {
+	if (CurrentHash == "")
+	{
+		throw std::runtime_error("No hash specified to run");
+	}
+
+	fs::current_path(RepoDirectory);
+
 	LogFile << "Running git update" << endl;
 	LogFile << "==================" << endl;
+	LogFile << "Cleaning and resetting to " << CurrentHash << endl;
 	required_command({"git", "clean", "-d", "-x", "-f"}, LogFile);
-	required_command({"git", "reset", "--hard"}, LogFile);
-	required_command({"git", "fetch", "origin", "master", "--tags"}, LogFile);
-	required_command({"git", "checkout", "master"}, LogFile);
-	required_command({"git", "reset", "--hard", "origin/master"}, LogFile);
+	required_command({"git", "reset", "--hard", CurrentHash}, LogFile);
 	LogFile << endl;
-
-	vector<string> tags = SeparateLines(required_command_output({"git", "tag", "-l"}));
-
-	LogFile << "git tags" << endl;
-	LogFile << "========" << endl;
-	if (tags.size())
-	{
-		for (auto tag : tags)
-		{
-			LogFile << tag << endl;
-		}
-	}
-	else
-	{
-		LogFile << "No tags." << endl;
-	}
-	LogFile << endl;
-
-	bool FoundTag = false;
-	for (auto tag : tags)
-	{
-		if (tag == assignment)
-		{
-			LogFile << "Tag found, building." << endl;
-			required_command({"git", "checkout", tag}, LogFile);
-			FoundTag = true;
-		}
-	}
-
-	if (! FoundTag)
-	{
-		LogFile << "Tag not found, building master." << endl;
-		required_command({"git", "checkout", "master"}, LogFile);
-	}
-	LogFile << endl;
-
-	LogFile << "Current commit" << endl;
-	LogFile << "==============" << endl;
-	required_command({"git", "log", "-n", "1", "--date=local", "HEAD"}, LogFile);
-	LogFile << endl;
-
-	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "HEAD"}));
 }
 
 void Grader::CheckForSingleDirectory()

@@ -17,17 +17,6 @@ enum class ETestStatus
 	Pass
 };
 
-class skip_exception : public std::runtime_error
-{
-
-public:
-
-	skip_exception(string const & what)
-		: std::runtime_error(what)
-	{}
-
-};
-
 class build_exception : public std::runtime_error
 {
 
@@ -46,9 +35,9 @@ public:
 
 	Grader(string const & student_, string const & assignment_, vector<Test> const & tests);
 
+	string GetLatestHash();
+	bool CheckWorkToDo(string const & hash);
 	void Run();
-
-	bool Regrade = false;
 
 protected:
 
@@ -66,12 +55,16 @@ protected:
 
 	std::ofstream LogFile;
 
-	void RunGit();
+	void GradeAssignment();
+	void WriteReports();
+
+	void WriteStatusFiles();
 	void RunBuild();
 	bool RunTests();
+	void WritePassFile();
 
 	void CopyInputFiles();
-	string DoGitUpdate(string const & assignment);
+	void DoGitUpdate();
 	void CheckForSingleDirectory();
 	ETestStatus DoTest(Test const & test);
 

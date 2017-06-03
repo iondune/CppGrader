@@ -71,9 +71,11 @@ void Run(std::deque<string> Arguments)
 
 	string student;
 	string assignment;
+	string commit;
 
 	bool All = false;
 	bool Regrade = false;
+	bool Dry = false;
 
 	while (Arguments.size())
 	{
@@ -89,6 +91,10 @@ void Run(std::deque<string> Arguments)
 		{
 			assignment = Remainder;
 		}
+		else if (BeginsWith(Argument, "--commit=", Remainder))
+		{
+			commit = Remainder;
+		}
 		else if (Argument == "--all")
 		{
 			All = true;
@@ -97,7 +103,18 @@ void Run(std::deque<string> Arguments)
 		{
 			Regrade = true;
 		}
+		else if (Argument == "--dry")
+		{
+			Dry = true;
+		}
 	}
+
+	cout << "################################################################################" << endl;
+	cout << endl;
+	cout << "Starting grade run ..." << endl;
+	auto current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	cout << "Current time: " << std::ctime(&current_time);
+	cout << endl;
 
 	vector<string> students;
 	vector<string> assignments;
@@ -124,6 +141,12 @@ void Run(std::deque<string> Arguments)
 	else
 	{
 		students.push_back(student);
+		cout << "Student: " << student << endl;
+	}
+
+	if (students.size() > 1 && commit != "")
+	{
+		throw usage_exception("can't grade specific hash for multiple students.");
 	}
 
 	if (assignment == "")
@@ -148,7 +171,10 @@ void Run(std::deque<string> Arguments)
 	else
 	{
 		assignments.push_back(assignment);
+		cout << "Assignment: " << assignment << endl;
 	}
+
+	cout << endl;
 
 	for (string const & assignment : assignments)
 	{
@@ -157,12 +183,35 @@ void Run(std::deque<string> Arguments)
 		for (string const & student : students)
 		{
 			Grader g(student, assignment, TestSuite);
-			g.Regrade = Regrade;
-			g.Run();
-		}
 
-		cout << endl << endl;
+			string HashToGrade = g.GetLatestHash();
+			if (commit != "")
+			{
+				HashToGrade = commit;
+			}
+
+			bool const WorkToDo = g.CheckWorkToDo(HashToGrade);
+
+			string Status = "grade";
+			if (! WorkToDo)
+			{
+				Status = (Regrade ? "force-run" : "skip");
+			}
+
+			cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << HashToGrade << "    " << Status << endl;
+
+			if (! Dry && (WorkToDo || Regrade))
+			{
+				g.Run();
+			}
+		}
 	}
+	cout << endl;
+
+	current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	cout << "Grading finished at: " << std::ctime(&current_time);
+
+	cout << endl << endl;
 }
 
 int main(int argc, char const ** argv)
