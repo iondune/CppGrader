@@ -55,7 +55,7 @@ protected:
 
 	std::ofstream LogFile;
 
-	void GradeAssignment();
+	bool GradeAssignment();
 	void WriteReports();
 
 	void WriteStatusFiles();

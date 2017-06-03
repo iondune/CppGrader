@@ -87,12 +87,16 @@ bool Grader::CheckWorkToDo(string const & hash)
 
 void Grader::Run()
 {
-	GradeAssignment();
-	WriteReports();
+	if (GradeAssignment())
+	{
+		WriteReports();
+	}
 }
 
-void Grader::GradeAssignment()
+bool Grader::GradeAssignment()
 {
+	bool MakeReports = true;
+
 	try
 	{
 		fs::current_path(RepoDirectory);
@@ -121,7 +125,10 @@ void Grader::GradeAssignment()
 	{
 		LogFile << "Unexpected exception occurred during grading." << endl;
 		LogFile << e.what() << endl;
+		MakeReports = false;
 	}
+
+	return MakeReports;
 }
 
 void Grader::WriteReports()
