@@ -65,7 +65,7 @@ string Grader::GetLatestHash()
 	}
 
 	LogFile << "Tag not found for assignment (" << assignment << "), grading master" << endl;
-	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "master"}));
+	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "origin/master"}));
 }
 
 bool Grader::CheckWorkToDo(string const & hash)
