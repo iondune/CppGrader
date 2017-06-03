@@ -39,17 +39,17 @@ void HTMLBuilder::HeaderInfo()
 
 	File << "<p>Student: " << Student << "</p>" << endl;
 
-	File << "<p>Grade Time/Date: " << ReadTrimmed("last_run") << "</p>" << endl;
+	File << "<p>Grade Time/Date: " << EscapeHTML(ReadTrimmed("last_run")) << "</p>" << endl;
 	File << "<p><a href=\"../\">&lt;&lt; Back to Commit Grade History</a></p>" << endl;
 
 	File << "<p><span>Current Commit:</span></p>" << endl;
 	File << "<pre><code>";
-	File << ReadTrimmed("current_commit") << endl;
+	File << EscapeHTML(ReadTrimmed("current_commit")) << endl;
 	File << "</code></pre>" << endl;
 
 	ModalWindowStart("file_view", "Directory Structure", "primary");
 	File << "<pre><code>";
-	File << ReadTrimmed("directory_listing");
+	File << EscapeHTML(ReadTrimmed("directory_listing"));
 	File << "</code></pre>" << endl;
 	ModalWindowEnd();
 }
@@ -66,7 +66,7 @@ bool HTMLBuilder::BuildInfo()
 		{
 			File << "<p>CMake output:</p>" << endl;
 			File << "<pre><code>";
-			File << ReadTrimmed("cmake_output");
+			File << EscapeHTML(ReadTrimmed("cmake_output"));
 			File << "</code></pre>" << endl;
 		}
 
@@ -74,7 +74,7 @@ bool HTMLBuilder::BuildInfo()
 		{
 			File << "<p>Make output:</p>" << endl;
 			File << "<pre><code>";
-			File << ReadTrimmed("make_output");
+			File << EscapeHTML(ReadTrimmed("make_output"));
 			File << "</code></pre>" << endl;
 		}
 
@@ -82,7 +82,7 @@ bool HTMLBuilder::BuildInfo()
 		{
 			File << "<p>gcc output:</p>" << endl;
 			File << "<pre><code>";
-			File << ReadTrimmed("gcc_output");
+			File << EscapeHTML(ReadTrimmed("gcc_output"));
 			File << "</code></pre>" << endl;
 		}
 	}
@@ -95,7 +95,7 @@ bool HTMLBuilder::BuildInfo()
 		{
 			ModalWindowStart("cmake_output", "CMake Output", "primary");
 			File << "<pre><code>";
-			File << ReadTrimmed("cmake_output");
+			File << EscapeHTML(ReadTrimmed("cmake_output"));
 			File << "</code></pre>" << endl;
 			ModalWindowEnd();
 		}
@@ -104,7 +104,16 @@ bool HTMLBuilder::BuildInfo()
 		{
 			ModalWindowStart("cmake_output", "Make Output", "primary");
 			File << "<pre><code>";
-			File << ReadTrimmed("make_output");
+			File << EscapeHTML(ReadTrimmed("make_output"));
+			File << "</code></pre>" << endl;
+			ModalWindowEnd();
+		}
+
+		if (fs::is_regular_file("gcc_output"))
+		{
+			ModalWindowStart("gcc_output", "gcc Output", "primary");
+			File << "<pre><code>";
+			File << EscapeHTML(ReadTrimmed("gcc_output"));
 			File << "</code></pre>" << endl;
 			ModalWindowEnd();
 		}
@@ -149,7 +158,7 @@ void HTMLBuilder::TextTests()
 		{
 			ModalWindowStart("diff_"s + test, "Failed - Diff Results ("s + test + ")", "danger");
 			File << "<pre><code>";
-			File << ReadTrimmed("my"s + test + ".diff");
+			File << EscapeHTML(ReadTrimmed("my"s + test + ".diff"));
 			File << "</code></pre>";
 			ModalWindowEnd();
 		}
@@ -248,7 +257,7 @@ void HTMLBuilder::ImageTests()
 
 		ModalWindowStart("output_"s + test, "Program output ("s + test + ".pov)", type);
 		File << "<pre><code>";
-		File << ReadTrimmed("my"s + test + ".out");
+		File << EscapeHTML(ReadTrimmed("my"s + test + ".out"));
 		File << "</code></pre>" << endl;
 		ModalWindowEnd();
 

@@ -31,3 +31,4 @@ void WriteToFile(string const & FileName, string const & s, bool const append = 
 string FloatToString(float const f, int const precision = 4);
 bool BeginsWith(string const & s, string const & prefix, string & remainder);
 string ReplaceAll(string subject, string const & search, string const & with);
+string EscapeHTML(string content);

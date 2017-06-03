@@ -139,3 +139,11 @@ string ReplaceAll(string subject, string const & search, string const & with)
 	}
 	return subject;
 }
+
+string EscapeHTML(string content)
+{
+	content = ReplaceAll(content, "&", "&amp;");
+	content = ReplaceAll(content, "<", "&lt;");
+	content = ReplaceAll(content, ">", "&gt;");
+	return content;
+}
