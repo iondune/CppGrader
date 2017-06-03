@@ -60,16 +60,19 @@ protected:
 	string StudentDirectory;
 	string RepoDirectory;
 	string ResultsDirectory;
+	string StudentResultsDirectory;
 	string AssignmentResultsDirectory;
 	string TestsDirectory;
+
+	std::ofstream LogFile;
 
 	void RunGit();
 	void RunBuild();
 	bool RunTests();
 
 	void CopyInputFiles();
-	static string DoGitUpdate(string const & assignment);
-	static void CheckForSingleDirectory();
+	string DoGitUpdate(string const & assignment);
+	void CheckForSingleDirectory();
 	ETestStatus DoTest(Test const & test);
 
 };

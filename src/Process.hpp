@@ -23,7 +23,7 @@ string command_output(std::initializer_list<string> const & cmd, Args&&... args)
 }
 
 template <typename... Args>
-void required_command(std::initializer_list<string> const & cmd, Args&&... args)
+void required_command(std::initializer_list<string> const & cmd, std::ostream & stream = std::cout, Args&&... args)
 {
 	auto p = sp::Popen(cmd, sp::output{sp::PIPE}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
 	auto res = p.communicate();
@@ -35,7 +35,7 @@ void required_command(std::initializer_list<string> const & cmd, Args&&... args)
 			command += " "s + c;
 		throw sp::CalledProcessError("Required command failed (non-zero retcode):" + command);
 	}
-	std::cout << res.first.buf.data();
+	stream << res.first.buf.data();
 }
 
 template <typename... Args>

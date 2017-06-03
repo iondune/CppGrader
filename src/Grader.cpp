@@ -15,7 +15,10 @@ Grader::Grader(string const & student_, string const & assignment_, vector<Test>
 
 	RepoDirectory = StudentDirectory + "repo/";
 
-	AssignmentResultsDirectory = SiteDirectory + student + "/" + assignment + "/";
+	StudentResultsDirectory = SiteDirectory + student + "/";
+	AssignmentResultsDirectory = StudentResultsDirectory + assignment + "/";
+
+	LogFile.open(StudentResultsDirectory + "logfile", std::ios_base::app);
 }
 
 void Grader::Run()
@@ -47,15 +50,15 @@ void Grader::Run()
 	{}
 	catch (build_exception const & e)
 	{
-		cout << "Build failure." << endl;
-		cout << e.what() << endl;
+		LogFile << "Build failure." << endl;
+		LogFile << e.what() << endl;
 		WriteToFile(ResultsDirectory + "status", "build_failure");
 		WriteToFile(AssignmentResultsDirectory + "list", CurrentHash + " build_failure\n", true);
 	}
 	catch (std::runtime_error const & e)
 	{
-		cerr << "Unexpected exception occurred during grading." << endl;
-		cerr << e.what() << endl;
+		LogFile << "Unexpected exception occurred during grading." << endl;
+		LogFile << e.what() << endl;
 	}
 
 	try
@@ -63,20 +66,20 @@ void Grader::Run()
 		fs::current_path(ResultsDirectory);
 		HTMLBuilder hb(student, assignment);
 		hb.Generate();
-		cout << "Report created at: " << ResultsDirectory + "report.html" << endl;
+		LogFile << "Report created at: " << ResultsDirectory + "report.html" << endl;
 
 		fs::current_path(AssignmentResultsDirectory);
 		IndexBuilder ib(student, assignment, RepoDirectory);
 		ib.GenerateAssignmentIndex();
-		cout << "Assignment index created at: " << AssignmentResultsDirectory + "index.html" << endl;
+		LogFile << "Assignment index created at: " << AssignmentResultsDirectory + "index.html" << endl;
 
 		fs::current_path(SiteDirectory + student);
 		ib.GenerateStudentIndex();
-		cout << "Student index created at: " << fs::current_path().string() + "/index.html" << endl;
+		LogFile << "Student index created at: " << fs::current_path().string() + "/index.html" << endl;
 
 		fs::current_path(SiteDirectory);
 		ib.GenerateCompleteIndex();
-		cout << "Complete index created at: " << fs::current_path().string() + "/index.html" << endl;
+		LogFile << "Complete index created at: " << fs::current_path().string() + "/index.html" << endl;
 	}
 	catch (std::runtime_error const & e)
 	{
@@ -92,14 +95,14 @@ void Grader::RunGit()
 
 	ResultsDirectory = AssignmentResultsDirectory + CurrentHash + "/";
 
-	cout << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
+	LogFile << "Creating directory for output: '" << ResultsDirectory << "'" << endl;
 	fs::create_directories(ResultsDirectory);
 	if (fs::is_regular_file(ResultsDirectory + "status"))
 	{
-		cout << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
+		LogFile << "Grading already completed for this assignment/commit pair: " << assignment << "/" << CurrentHash << endl;
 		if (Regrade)
 		{
-			cout << "But --regrade flag specified, grading again." << endl;
+			LogFile << "But --regrade flag specified, grading again." << endl;
 		}
 		else
 		{
@@ -127,21 +130,21 @@ void Grader::RunBuild()
 			if (p.filename() == "CMakeLists.txt")
 			{
 				BuildType = EBuildType::CMake;
-				cout << "Found CMakeLists.txt, doing CMake build." << endl;
+				LogFile << "Found CMakeLists.txt, doing CMake build." << endl;
 			}
 			else if (p.filename() == "Makefile")
 			{
 				BuildType = EBuildType::Make;
-				cout << "Found Makefile, doing Make build." << endl;
+				LogFile << "Found Makefile, doing Make build." << endl;
 			}
 		}
 	}
 
 	if (BuildType == EBuildType::Auto)
 	{
-		cout << "Found no build files, attempting g++ build." << endl;
+		LogFile << "Found no build files, attempting g++ build." << endl;
 	}
-	cout << endl;
+	LogFile << endl;
 
 
 	sp::environment build_environment = sp::environment{{
@@ -185,19 +188,19 @@ void Grader::RunBuild()
 
 		for (auto path : cppfiles)
 		{
-			cout << "Found .cpp file to build: " << path << endl;
+			LogFile << "Found .cpp file to build: " << path << endl;
 			Args.push_back(path.string());
 		}
 		Args.push_back("-O3");
 		Args.push_back("-o");
 		Args.push_back("raytrace");
 
-		cout << "- Args are:";
+		LogFile << "- Args are:";
 		for (string const & Arg : Args)
 		{
-			cout << " '" << Arg << "'";
+			LogFile << " '" << Arg << "'";
 		}
-		cout << endl;
+		LogFile << endl;
 
 		if (! try_command_redirect(Args, ResultsDirectory + "gcc_output"))
 		{
@@ -218,8 +221,8 @@ bool Grader::RunTests()
 	std::stringstream TestIndex;
 	std::stringstream ImageIndex;
 
-	cout << "Running Tests" << endl;
-	cout << "=============" << endl;
+	LogFile << "Running Tests" << endl;
+	LogFile << "=============" << endl;
 	for (Test const & test : TestSuite)
 	{
 		if (DoTest(test) != ETestStatus::Pass && test.Required)
@@ -236,18 +239,18 @@ bool Grader::RunTests()
 			ImageIndex << test.Name << endl;
 		}
 	}
-	cout << endl;
+	LogFile << endl;
 
 	WriteToFile(ResultsDirectory + "tests_index", TestIndex.str());
 	WriteToFile(ResultsDirectory + "image_index", ImageIndex.str());
 
 	if (AllTestsPassed)
 	{
-		cout << "All tests passed!" << endl;
+		LogFile << "All tests passed!" << endl;
 	}
 	else
 	{
-		cout << "Some tests failed." << endl;
+		LogFile << "Some tests failed." << endl;
 	}
 
 	return AllTestsPassed;
@@ -271,9 +274,9 @@ void Grader::CopyInputFiles()
 		{
 			if (fs::is_regular_file(p))
 			{
-				required_command({"cp", p.string(), "./"});
-				required_command({"cp", p.string(), "build/"});
-				required_command({"cp", p.string(), "resources/"});
+				required_command({"cp", p.string(), "./"}, LogFile);
+				required_command({"cp", p.string(), "build/"}, LogFile);
+				required_command({"cp", p.string(), "resources/"}, LogFile);
 			}
 		}
 	}
@@ -281,54 +284,54 @@ void Grader::CopyInputFiles()
 
 string Grader::DoGitUpdate(string const & assignment)
 {
-	cout << "Running git update" << endl;
-	cout << "==================" << endl;
-	required_command({"git", "clean", "-d", "-x", "-f"});
-	required_command({"git", "reset", "--hard",});
-	required_command({"git", "fetch", "origin", "master", "--tags"});
-	required_command({"git", "checkout", "master"});
-	required_command({"git", "reset", "--hard", "origin/master"});
-	cout << endl;
+	LogFile << "Running git update" << endl;
+	LogFile << "==================" << endl;
+	required_command({"git", "clean", "-d", "-x", "-f"}, LogFile);
+	required_command({"git", "reset", "--hard"}, LogFile);
+	required_command({"git", "fetch", "origin", "master", "--tags"}, LogFile);
+	required_command({"git", "checkout", "master"}, LogFile);
+	required_command({"git", "reset", "--hard", "origin/master"}, LogFile);
+	LogFile << endl;
 
 	vector<string> tags = SeparateLines(required_command_output({"git", "tag", "-l"}));
 
-	cout << "git tags" << endl;
-	cout << "========" << endl;
+	LogFile << "git tags" << endl;
+	LogFile << "========" << endl;
 	if (tags.size())
 	{
 		for (auto tag : tags)
 		{
-			cout << tag << endl;
+			LogFile << tag << endl;
 		}
 	}
 	else
 	{
-		cout << "No tags." << endl;
+		LogFile << "No tags." << endl;
 	}
-	cout << endl;
+	LogFile << endl;
 
 	bool FoundTag = false;
 	for (auto tag : tags)
 	{
 		if (tag == assignment)
 		{
-			cout << "Tag found, building." << endl;
-			required_command({"git", "checkout", tag});
+			LogFile << "Tag found, building." << endl;
+			required_command({"git", "checkout", tag}, LogFile);
 			FoundTag = true;
 		}
 	}
 
 	if (! FoundTag)
 	{
-		cout << "Tag not found, building master." << endl;
-		required_command({"git", "checkout", "master"});
+		LogFile << "Tag not found, building master." << endl;
+		required_command({"git", "checkout", "master"}, LogFile);
 	}
-	cout << endl;
+	LogFile << endl;
 
-	cout << "Current commit" << endl;
-	cout << "==============" << endl;
-	required_command({"git", "log", "-n", "1", "--date=local", "HEAD"});
-	cout << endl;
+	LogFile << "Current commit" << endl;
+	LogFile << "==============" << endl;
+	required_command({"git", "log", "-n", "1", "--date=local", "HEAD"}, LogFile);
+	LogFile << endl;
 
 	return TrimWhitespace(required_command_output({"git", "rev-parse", "--short=7", "HEAD"}));
 }
@@ -359,7 +362,7 @@ void Grader::CheckForSingleDirectory()
 
 	if (NumFiles == 0 && NumDirectories == 1)
 	{
-		cout << "Found single directory (" << directory << "), entering..." << endl;
+		LogFile << "Found single directory (" << directory << "), entering..." << endl;
 		fs::current_path(directory);
 	}
 }
@@ -387,7 +390,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const MyDurationFile = ResultsDirectory + "my" + TestName + ".duration";
 	string const MyArgsFile = ResultsDirectory + "my" + TestName + ".args";
 
-	cout << "Running test '" << TestName << "'" << endl;
+	LogFile << "Running test '" << TestName << "'" << endl;
 
 	if (test.Required)
 	{
@@ -397,14 +400,14 @@ ETestStatus Grader::DoTest(Test const & test)
 
 	vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
 	Args.insert(Args.begin(), "raytrace");
-	cout << "- Args are:";
+	LogFile << "- Args are:";
 	for (string & Arg : Args)
 	{
 		Arg = TrimWhitespace(Arg);
-		cout << " '" << Arg << "'";
+		LogFile << " '" << Arg << "'";
 	}
-	cout << endl;
-	required_command({"cp", ArgsFile, MyArgsFile});
+	LogFile << endl;
+	required_command({"cp", ArgsFile, MyArgsFile}, LogFile);
 
 	if (fs::is_regular_file("output.png"))
 	{
@@ -417,16 +420,16 @@ ETestStatus Grader::DoTest(Test const & test)
 
 	if (CommandStatus == ECommandStatus::Timeout)
 	{
-		cout << "- Timeout occurred." << endl;
+		LogFile << "- Timeout occurred." << endl;
 		TestStatus = ETestStatus::Timeout;
 	}
 	else if (CommandStatus == ECommandStatus::Failure)
 	{
-		cout << "- Test failed." << endl;
+		LogFile << "- Test failed." << endl;
 	}
 	else if (CommandStatus == ECommandStatus::Success)
 	{
-		cout << "- Test executed." << endl;
+		LogFile << "- Test executed." << endl;
 	}
 
 	if (test.Type == ETestType::Text)
@@ -435,11 +438,11 @@ ETestStatus Grader::DoTest(Test const & test)
 
 		if (DiffSucess)
 		{
-			cout << "- Diff passed." << endl;
+			LogFile << "- Diff passed." << endl;
 		}
 		else
 		{
-			cout << "- Diff failed." << endl;
+			LogFile << "- Diff failed." << endl;
 		}
 
 		if (CommandStatus == ECommandStatus::Success && DiffSucess)
@@ -451,11 +454,11 @@ ETestStatus Grader::DoTest(Test const & test)
 	{
 		if (fs::is_regular_file("output.png"))
 		{
-			required_command({"mv", "output.png", MyImageFile});
-			required_command({"cp", ImageFile , ResultsDirectory + TestName + ".png"});
+			required_command({"mv", "output.png", MyImageFile}, LogFile);
+			required_command({"cp", ImageFile , ResultsDirectory + TestName + ".png"}, LogFile);
 			string img_diff = command_output({"compare", "-metric", "AE", "-fuzz", "5%", ImageFile, MyImageFile, MyImageDiffFile});
 			img_diff = TrimWhitespace(img_diff);
-			cout << "- Image diff: " << img_diff << endl;
+			LogFile << "- Image diff: " << img_diff << endl;
 
 			int const PixelDifferences = std::stoi(img_diff);
 			WriteToFile(MyImagePixelsFile, std::to_string(PixelDifferences));
@@ -467,7 +470,7 @@ ETestStatus Grader::DoTest(Test const & test)
 		}
 		else
 		{
-			cout << "- No image produced." << endl;
+			LogFile << "- No image produced." << endl;
 		}
 	}
 
