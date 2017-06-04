@@ -183,6 +183,7 @@ void Grader::RunBuild()
 			{
 				BuildType = EBuildType::CMake;
 				LogFile << "Found CMakeLists.txt, doing CMake build." << endl;
+				break;
 			}
 			else if (p.filename() == "Makefile")
 			{
@@ -194,7 +195,28 @@ void Grader::RunBuild()
 
 	if (BuildType == EBuildType::Auto)
 	{
-		LogFile << "Found no build files, attempting g++ build." << endl;
+		if (fs::is_directory("src/"))
+		{
+			fs::current_path("src/");
+
+			for(auto d : fs::directory_iterator("."))
+			{
+				auto p = d.path();
+				if (p.has_filename())
+				{
+					if (p.filename() == "Makefile")
+					{
+						BuildType = EBuildType::Make;
+						LogFile << "Found Makefile, doing Make build." << endl;
+						break;
+					}
+				}
+			}
+		}
+		if (BuildType == EBuildType::Auto)
+		{
+			LogFile << "Found no build files, attempting g++ build." << endl;
+		}
 	}
 	LogFile << endl;
 
@@ -231,7 +253,7 @@ void Grader::RunBuild()
 		vector<string> Args;
 		Args.push_back("gcc");
 
-		vector<fs::path> cppfiles = FindAllWithExtension("src/", "cpp");
+		vector<fs::path> cppfiles = FindAllWithExtension(".", "cpp");
 
 		if (! cppfiles.size())
 		{
