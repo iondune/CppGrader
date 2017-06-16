@@ -449,6 +449,7 @@ ETestStatus Grader::DoTest(Test const & test)
 
 	vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
 	Args.insert(Args.begin(), "raytrace");
+	Args.insert(Args.begin(), "unbuffer");
 	LogFile << "- Args are:";
 	for (string & Arg : Args)
 	{
