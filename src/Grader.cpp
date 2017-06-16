@@ -510,10 +510,18 @@ ETestStatus Grader::DoTest(Test const & test)
 			img_diff = TrimWhitespace(img_diff);
 			LogFile << "- Image diff: " << img_diff << endl;
 
-			int const PixelDifferences = std::stoi(img_diff);
+			int PixelDifferences = -1;
+			try
+			{
+				PixelDifferences = std::stoi(img_diff);
+			}
+			catch (std::invalid_argument const & e)
+			{
+				LogFile << "- Image comparison failed, image size mismatch likely." << endl;
+			}
 			WriteToFile(MyImagePixelsFile, std::to_string(PixelDifferences));
 
-			if (CommandStatus == ECommandStatus::Success && PixelDifferences < 1000)
+			if (CommandStatus == ECommandStatus::Success && PixelDifferences < 1000 && PixelDifferences >= 0)
 			{
 				TestStatus = ETestStatus::Pass;
 			}
