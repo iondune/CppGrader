@@ -39,9 +39,11 @@ public:
 
 void PrintUsage(string const & exec_name)
 {
-	cerr << "usage: " << exec_name << " --all" << endl;
+	cerr << endl;
+	cerr << "usage: " << exec_name << " [options]" << endl;
 	cerr << endl;
 	cerr << "   options:" << endl;
+	cerr << "       --all                      grade all students (otherwise, --student required)" << endl;
 	cerr << "       --regrade                  force a grade of the latest commit" << endl;
 	cerr << "       --dry                      dry run, merely print what grading tasks would be peformed" << endl;
 	cerr << "       --student=<username>       grade only a particular student" << endl;
@@ -113,6 +115,10 @@ void Run(std::deque<string> Arguments)
 		else if (Argument == "--dry")
 		{
 			Dry = true;
+		}
+		else
+		{
+			throw usage_exception("unknown option '" + Argument + "'");
 		}
 	}
 
