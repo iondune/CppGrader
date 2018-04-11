@@ -39,8 +39,15 @@ public:
 
 void PrintUsage(string const & exec_name)
 {
-	cerr << "usage: " << exec_name << " all" << endl;
-	cerr << "   or: " << exec_name << " [student] [assignment]" << endl;
+	cerr << "usage: " << exec_name << " --all" << endl;
+	cerr << endl;
+	cerr << "   options:" << endl;
+	cerr << "       --regrade                  force a grade of the latest commit" << endl;
+	cerr << "       --dry                      dry run, merely print what grading tasks would be peformed" << endl;
+	cerr << "       --student=<username>       grade only a particular student" << endl;
+	cerr << "       --assignment=<assignment>  grade only a particular assignment" << endl;
+	cerr << "       --commit=<commit>          grade only a particular commit (--student also required)" << endl;
+	cerr << endl;
 }
 
 vector<Test> ParseSuite(string const & assignment)
