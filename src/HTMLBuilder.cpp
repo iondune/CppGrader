@@ -33,9 +33,9 @@ void HTMLBuilder::Generate()
 void HTMLBuilder::HeaderInfo()
 {
 	Cat(TemplateDirectory + "top1.html", File);
-	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
+	File << "<title>[" << Student << "] CSC 473 Grade Results</title>" << endl;
 	Cat(TemplateDirectory + "top2.html", File);
-	File << "<h1>[CPE 473] Program (" << Assignment << ") Grade Results</h1>" << endl;
+	File << "<h1>[CSC 473] Program (" << Assignment << ") Grade Results</h1>" << endl;
 
 	File << "<p>Student: " << Student << "</p>" << endl;
 

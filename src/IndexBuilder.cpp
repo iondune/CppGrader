@@ -17,10 +17,10 @@ void IndexBuilder::GenerateAssignmentIndex()
 	File.open("index.html");
 
 	Cat(TemplateDirectory + "top1.html", File);
-	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
+	File << "<title>[" << Student << "] CSC 473 Grade Results</title>" << endl;
 	Cat(TemplateDirectory + "top2.html", File);
 
-	File << "<h1>[CPE 473] Program (" << Assignment << ") Grade Results</h1>" << endl;
+	File << "<h1>[CSC 473] Program (" << Assignment << ") Grade Results</h1>" << endl;
 	File << "<p>Student: " << Student << "</p>" << endl;
 	File << "<p><a href=\"../\">&lt;&lt; Back to All Programs</a></p>" << endl;
 
@@ -81,9 +81,9 @@ void IndexBuilder::GenerateStudentIndex()
 	Parent.open("parent_row.html");
 
 	Cat(TemplateDirectory + "top1.html", File);
-	File << "<title>[" << Student << "] CPE 473 Grade Results</title>" << endl;
+	File << "<title>[" << Student << "] CSC 473 Grade Results</title>" << endl;
 	Cat(TemplateDirectory + "top2.html", File);
-	File << "<h1>[CPE 473] All Program Grade Results</h1>" << endl;
+	File << "<h1>[CSC 473] All Program Grade Results</h1>" << endl;
 
 	File << "<p>Student: " << Student << "</p>" << endl;
 
@@ -184,9 +184,9 @@ void IndexBuilder::GenerateCompleteIndex()
 	File.open("all.html");
 
 	Cat(TemplateDirectory + "top1.html", File);
-	File << "<title>CPE 473 Grade Results</title>" << endl;
+	File << "<title>CSC 473 Grade Results</title>" << endl;
 	Cat(TemplateDirectory + "top2.html", File);
-	File << "<h1>[CPE 473] All Student Grade Results</h1>" << endl;
+	File << "<h1>[CSC 473] All Student Grade Results</h1>" << endl;
 
 	vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
 
