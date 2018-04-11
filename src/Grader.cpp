@@ -135,6 +135,8 @@ void Grader::WriteReports()
 {
 	try
 	{
+		fs::create_directories(ResultsDirectory);
+
 		fs::current_path(ResultsDirectory);
 		HTMLBuilder hb(student, assignment);
 		hb.Generate();
