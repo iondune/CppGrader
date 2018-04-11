@@ -1,0 +1,25 @@
+
+
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script>
+  $('.image-toggler').click(function(){
+    var test_name = $(this).attr('data-test-name');
+    var image_number = $(this).attr('data-image-number');
+
+    $("#" + test_name + "_image" + "1").hide();
+    $("#" + test_name + "_image" + "2").hide();
+    $("#" + test_name + "_image" + "3").hide();
+    $("#" + test_name + "_image" + image_number).show();
+    console.log("show: " + "#" + test_name + "_image" + image_number);
+  });
+</script>
+
+</body>
+</html>
