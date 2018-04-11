@@ -39,6 +39,16 @@ void required_command(std::initializer_list<string> const & cmd, std::ostream & 
 }
 
 template <typename... Args>
+bool try_command(std::initializer_list<string> const & cmd, std::ostream & stream = std::cout, Args&&... args)
+{
+	auto p = sp::Popen(cmd, sp::output{sp::PIPE}, sp::error{sp::STDOUT}, std::forward<Args>(args)...);
+	auto res = p.communicate();
+	auto retcode = p.retcode();
+	stream << res.first.buf.data();
+	return retcode == 0;
+}
+
+template <typename... Args>
 string required_command_output(std::initializer_list<string> const & cmd, Args&&... args)
 {
 	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);

@@ -108,6 +108,7 @@ void IndexBuilder::GenerateStudentIndex()
 		File << "<tr>" << endl;
 		File << "<td><a href=\"" << assignment << "/\">" << assignment << "</a></td>" << endl;
 
+		fs::create_directories(assignment);
 		fs::current_path(assignment);
 		vector<CommitInfo> const Commits = GetCommits();
 		fs::current_path("..");
@@ -217,6 +218,11 @@ void IndexBuilder::GenerateCompleteIndex()
 vector<CommitInfo> IndexBuilder::GetCommits()
 {
 	vector<CommitInfo> Commits;
+
+	if (! FileExists("list"))
+	{
+		return Commits;
+	}
 
 	vector<string> Lines = ReadAsLines("list");
 

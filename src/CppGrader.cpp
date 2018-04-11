@@ -197,26 +197,35 @@ void Run(std::deque<string> Arguments)
 		{
 			Grader g(student, assignment, TestSuite);
 
-			string HashToGrade = g.GetLatestHash();
-			if (commit != "")
+			try
 			{
-				HashToGrade = commit;
+				string HashToGrade = g.GetLatestHash();
+				if (commit != "")
+				{
+					HashToGrade = commit;
+				}
+
+				bool const WorkToDo = g.CheckWorkToDo(HashToGrade);
+
+				string Status = "grade";
+				if (! WorkToDo)
+				{
+					Status = (Regrade ? "force-run" : "skip");
+				}
+
+				cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << HashToGrade << "    " << Status << endl;
+
+				if (! Dry && (WorkToDo || Regrade))
+				{
+					g.Run();
+				}
+			}
+			catch (std::exception const & e)
+			{
+				cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << "-------" << "    " << "exception: " << e.what() << endl;
 			}
 
-			bool const WorkToDo = g.CheckWorkToDo(HashToGrade);
-
-			string Status = "grade";
-			if (! WorkToDo)
-			{
-				Status = (Regrade ? "force-run" : "skip");
-			}
-
-			cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << HashToGrade << "    " << Status << endl;
-
-			if (! Dry && (WorkToDo || Regrade))
-			{
-				g.Run();
-			}
+			g.WriteIndices();
 		}
 	}
 	cout << endl;

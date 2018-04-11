@@ -38,6 +38,7 @@ public:
 	string GetLatestHash();
 	bool CheckWorkToDo(string const & hash);
 	void Run();
+	void WriteIndices();
 
 protected:
 
@@ -56,7 +57,7 @@ protected:
 	std::ofstream LogFile;
 
 	bool GradeAssignment();
-	void WriteReports();
+	void WriteReport();
 
 	void WriteStatusFiles();
 	void RunBuild();

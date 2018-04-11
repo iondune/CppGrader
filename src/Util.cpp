@@ -147,3 +147,9 @@ string EscapeHTML(string content)
 	content = ReplaceAll(content, ">", "&gt;");
 	return content;
 }
+
+bool FileExists(string const & FileName)
+{
+	std::ifstream ifile(FileName);
+	return ifile.good();
+}

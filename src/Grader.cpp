@@ -19,6 +19,7 @@ Grader::Grader(string const & student_, string const & assignment_, vector<Test>
 
 	StudentResultsDirectory = SiteDirectory + student + "/";
 	AssignmentResultsDirectory = StudentResultsDirectory + assignment + "/";
+	fs::create_directories(AssignmentResultsDirectory);
 
 	LogFile.open(StudentResultsDirectory + "logfile", std::ios_base::app);
 	LogFile << "################################################################################" << endl;
@@ -35,7 +36,12 @@ string Grader::GetLatestHash()
 
 	LogFile << "Checking git status" << endl;
 	LogFile << "===================" << endl;
-	required_command({"git", "fetch", "origin", "master", "--tags"}, LogFile);
+	bool fetchResult = try_command({"git", "fetch", "origin", "master", "--tags"}, LogFile);
+
+	if (! fetchResult)
+	{
+		throw std::runtime_error("No master branch found on origin remote.");
+	}
 	LogFile << endl;
 
 	vector<string> tags = SeparateLines(required_command_output({"git", "tag", "-l"}));
@@ -89,7 +95,7 @@ void Grader::Run()
 {
 	if (GradeAssignment())
 	{
-		WriteReports();
+		WriteReport();
 	}
 }
 
@@ -131,18 +137,28 @@ bool Grader::GradeAssignment()
 	return MakeReports;
 }
 
-void Grader::WriteReports()
+void Grader::WriteReport()
 {
 	try
 	{
-		fs::create_directories(ResultsDirectory);
-
 		fs::current_path(ResultsDirectory);
 		HTMLBuilder hb(student, assignment);
 		hb.Generate();
 		LogFile << "Report created at: " << ResultsDirectory + "report.html" << endl;
+	}
+	catch (std::runtime_error const & e)
+	{
+		cerr << "Failed to create html report." << endl;
+		cerr << "Exception: " << e.what() << endl;
+	}
+}
 
+void Grader::WriteIndices()
+{
+	try
+	{
 		fs::current_path(AssignmentResultsDirectory);
+
 		IndexBuilder ib(student, assignment, RepoDirectory);
 		ib.GenerateAssignmentIndex();
 		LogFile << "Assignment index created at: " << AssignmentResultsDirectory + "index.html" << endl;
@@ -153,12 +169,12 @@ void Grader::WriteReports()
 
 		fs::current_path(SiteDirectory);
 		ib.GenerateCompleteIndex();
-		LogFile << "Complete index created at: " << fs::current_path().string() + "/index.html" << endl;
+		LogFile << "Complete index created at: " << fs::current_path().string() + "/all.html" << endl;
 	}
 	catch (std::runtime_error const & e)
 	{
-		cerr << "Failed to create html report." << endl;
-		cerr << "Readon: " << e.what() << endl;
+		cerr << "Failed to create html indices." << endl;
+		cerr << "Exception: " << e.what() << endl;
 	}
 }
 
