@@ -102,7 +102,7 @@ bool HTMLBuilder::BuildInfo()
 
 		if (fs::is_regular_file("make_output"))
 		{
-			ModalWindowStart("cmake_output", "Make Output", "primary");
+			ModalWindowStart("make_output", "Make Output", "primary");
 			File << "<pre><code>";
 			File << EscapeHTML(ReadTrimmed("make_output"));
 			File << "</code></pre>" << endl;
