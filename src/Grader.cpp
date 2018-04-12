@@ -458,6 +458,8 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const MyArgsFile = ResultsDirectory + "my" + TestName + ".args";
 
 	LogFile << "Running test '" << TestName << "'" << endl;
+	LogFile << "Currently in:" << endl;
+	required_command({"pwd"}, LogFile);
 
 	if (test.Required)
 	{
@@ -466,7 +468,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	WriteToFile(TimeoutFile, FloatToString(test.Timeout));
 
 	vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
-	Args.insert(Args.begin(), "raytrace");
+	Args.insert(Args.begin(), fs::current_path().string() + "/raytrace");
 	Args.insert(Args.begin(), "unbuffer");
 	LogFile << "- Args are:";
 	for (string & Arg : Args)
