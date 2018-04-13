@@ -107,9 +107,13 @@ bool Grader::GradeAssignment()
 	{
 		fs::current_path(RepoDirectory);
 
+		LogFile << "Doing Git update..." << endl;
 		DoGitUpdate();
+		LogFile << "Writing status files..." << endl;
 		WriteStatusFiles();
+		LogFile << "Running build..." << endl;
 		RunBuild();
+		LogFile << "Running tests..." << endl;
 		if (RunTests())
 		{
 			WritePassFile();
@@ -249,11 +253,13 @@ void Grader::RunBuild()
 		fs::current_path("build");
 		RemoveIfExists("CMakeCache.txt");
 
-		if (! try_command_redirect({"cmake", ".."}, ResultsDirectory + "cmake_output", std::move(build_environment)))
+		LogFile << "Starting cmake ..." << endl;
+		if (! try_command_redirect({"/usr/local/bin/cmake", ".."}, ResultsDirectory + "cmake_output", std::move(build_environment)))
 		{
 			throw build_exception("CMake build failed.");
 		}
 
+		LogFile << "Starting make ..." << endl;
 		if (! try_command_redirect({"make"}, ResultsDirectory + "make_output"))
 		{
 			throw build_exception("Make build failed.");
