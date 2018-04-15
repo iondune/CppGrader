@@ -60,7 +60,14 @@ void IndexBuilder::GenerateAssignmentIndex()
 		}
 		for (string Tag : Commit.Tags)
 		{
-			File << " <span class=\"label label-info\">" << Tag << "</span>";
+			if (Tag == Assignment)
+			{
+				File << " <span class=\"label label-primary\">" << Tag << "</span>";
+			}
+			else
+			{
+				File << " <span class=\"label label-info\">" << Tag << "</span>";
+			}
 		}
 		File << "</td>" << endl;
 
