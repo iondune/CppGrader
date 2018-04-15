@@ -187,6 +187,8 @@ void IndexBuilder::GenerateCompleteIndex()
 	File << "<title>CSC 473 Grade Results</title>" << endl;
 	Cat(TemplateDirectory + "top2.html", File);
 	File << "<h1>[CSC 473] All Student Grade Results</h1>" << endl;
+	auto current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	File << "<p>Last run: " << std::ctime(&current_time) << "</p>" << endl;
 
 	vector<string> assignments = ReadAsLines(ExecDirectory + "assignments");
 
