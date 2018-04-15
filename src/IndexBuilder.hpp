@@ -11,6 +11,7 @@ struct CommitInfo
 	string Status;
 	time_t Date;
 	string DateString;
+	vector<string> Tags;
 
 	bool operator < (CommitInfo const & other) const
 	{

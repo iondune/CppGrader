@@ -58,6 +58,10 @@ void IndexBuilder::GenerateAssignmentIndex()
 		{
 			File << "<span class=\"label label-default\">" << Commit.Status << "</span>";
 		}
+		for (string Tag : Commit.Tags)
+		{
+			File << " <span class=\"label label-info\">" << Tag << "</span>";
+		}
 		File << "</td>" << endl;
 
 		File << "<td>" << Commit.DateString << "</td>" << endl;
@@ -240,12 +244,14 @@ vector<CommitInfo> IndexBuilder::GetCommits()
 			string const CommitDate = command_output({"git", "log", "-1", "--pretty=format:%ct", Hash, "--"}, sp::environment(std::map<string, string>({{"GIT_DIR", RepoDirectory + ".git/"}})));
 			time_t const Date = std::stoi(CommitDate);
 			string const DateString = TrimWhitespace(std::ctime(&Date));
+			vector<string> const Tags = SeparateLines(command_output({"git", "tag", "--points-at", Hash}, sp::environment(std::map<string, string>({{"GIT_DIR", RepoDirectory + ".git/"}}))));
 
 			CommitInfo Info;
 			Info.Hash = Hash;
 			Info.Status = Status;
 			Info.Date = Date;
 			Info.DateString = DateString;
+			Info.Tags = Tags;
 
 			auto it = std::find_if(Commits.begin(), Commits.end(), [Info](CommitInfo const & other) { return Info.Hash == other.Hash; });
 
