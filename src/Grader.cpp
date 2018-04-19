@@ -528,6 +528,16 @@ ETestStatus Grader::DoTest(Test const & test)
 	}
 	else if (test.Type == ETestType::Image)
 	{
+		string const TrimBytes = "16384";
+		string TrimmedLog = required_command_output({"head", "--bytes=" + TrimBytes, MyOutFile});
+		std::ofstream TrimmedLogFile(MyOutFile);
+		if (! TrimmedLogFile.is_open())
+		{
+			throw std::runtime_error(std::string("Can't open file: ") + MyOutFile);
+		}
+		TrimmedLogFile << TrimmedLog;
+		TrimmedLogFile.close();
+
 		if (fs::is_regular_file("output.png"))
 		{
 			required_command({"mv", "output.png", MyImageFile}, LogFile);
