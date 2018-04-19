@@ -1,6 +1,9 @@
 
 #include "HTMLBuilder.hpp"
 #include "FileSystem.hpp"
+#include "Process.hpp"
+
+static string const TrimBytes == "16384";
 
 
 HTMLBuilder::HTMLBuilder(string const & student, string const & assignment)
@@ -158,7 +161,7 @@ void HTMLBuilder::TextTests()
 		{
 			ModalWindowStart("diff_"s + test, "Failed - Diff Results ("s + test + ")", "danger");
 			File << "<pre><code>";
-			File << EscapeHTML(ReadTrimmed("my"s + test + ".diff"));
+			File << EscapeHTML(command_output({"head", "--bytes=" + TrimBytes, "my"s + test + ".diff"}));
 			File << "</code></pre>";
 			ModalWindowEnd();
 		}
@@ -257,7 +260,7 @@ void HTMLBuilder::ImageTests()
 
 		ModalWindowStart("output_"s + test, "Program output ("s + test + ".pov)", type);
 		File << "<pre><code>";
-		File << EscapeHTML(ReadTrimmed("my"s + test + ".out"));
+		File << EscapeHTML(command_output({"head", "--bytes=" + TrimBytes, "my"s + test + ".out"}));
 		File << "</code></pre>" << endl;
 		ModalWindowEnd();
 
