@@ -45,6 +45,7 @@ void PrintUsage(string const & exec_name)
 	cerr << "   options:" << endl;
 	cerr << "       --all                      grade all students (otherwise, --student required)" << endl;
 	cerr << "       --regrade                  force a grade of the latest commit" << endl;
+	cerr << "       --report                   only generate HTML, don't run any tests" << endl;
 	cerr << "       --dry                      dry run, merely print what grading tasks would be peformed" << endl;
 	cerr << "       --student=<username>       grade only a particular student" << endl;
 	cerr << "       --assignment=<assignment>  grade only a particular assignment" << endl;
@@ -84,6 +85,7 @@ void Run(std::deque<string> Arguments)
 
 	bool All = false;
 	bool Regrade = false;
+	bool Reports = false;
 	bool Dry = false;
 
 	while (Arguments.size())
@@ -112,6 +114,10 @@ void Run(std::deque<string> Arguments)
 		{
 			Regrade = true;
 		}
+		else if (Argument == "--report")
+		{
+			Reports = true;
+		}
 		else if (Argument == "--dry")
 		{
 			Dry = true;
@@ -120,6 +126,11 @@ void Run(std::deque<string> Arguments)
 		{
 			throw usage_exception("unknown option '" + Argument + "'");
 		}
+	}
+
+	if (Regrade && Reports)
+	{
+		throw usage_exception("cannot combine --regrade and --report options");
 	}
 
 	cout << "################################################################################" << endl;
@@ -199,31 +210,54 @@ void Run(std::deque<string> Arguments)
 
 			try
 			{
-				string HashToGrade = g.GetLatestHash();
-				if (commit != "")
+				if (Reports)
 				{
-					HashToGrade = commit;
+					string HashToGrade = g.GetLatestHash();
+					if (commit != "")
+					{
+						HashToGrade = commit;
+					}
+
+					bool const WorkToDo = g.CheckWorkToDo(HashToGrade);
+
+					string Status = "need-grade";
+					if (! WorkToDo)
+					{
+						g.WriteReport();
+						Status = "generated";
+					}
+
+					cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << HashToGrade << "    " << Status << endl;
 				}
-
-				bool const WorkToDo = g.CheckWorkToDo(HashToGrade);
-
-				string Status = "grade";
-				if (! WorkToDo)
+				else
 				{
-					Status = (Regrade ? "force-run" : "skip");
-				}
+						string HashToGrade = g.GetLatestHash();
+						if (commit != "")
+						{
+							HashToGrade = commit;
+						}
 
-				cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << HashToGrade << "    " << Status << endl;
+						bool const WorkToDo = g.CheckWorkToDo(HashToGrade);
 
-				if (! Dry && (WorkToDo || Regrade))
-				{
-					g.Run();
+						string Status = "grade";
+						if (! WorkToDo)
+						{
+							Status = (Regrade ? "force-run" : "skip");
+						}
+
+						cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << HashToGrade << "    " << Status << endl;
+
+						if (! Dry && (WorkToDo || Regrade))
+						{
+							g.Run();
+						}
 				}
 			}
 			catch (std::exception const & e)
 			{
 				cout << "* " << std::setw(10) << student << "    " << assignment << "  " << std::setw(9) << "-------" << "    " << "exception: " << e.what() << endl;
 			}
+
 
 			g.WriteIndices();
 		}
