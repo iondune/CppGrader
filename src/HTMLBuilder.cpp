@@ -218,6 +218,11 @@ void HTMLBuilder::ImageTests()
 			File << "<span class=\"label label-danger\">Failure</span>" << endl;
 		}
 
+		if (! fs::is_regular_file(test + ".required"))
+		{
+			File << "<span class=\"label label-info\">Optional</span>" << endl;
+		}
+
 		File << "</td><td>" << endl;
 
 		File << "<p>Test took " << ReadTrimmed("my"s + test + ".duration") << "s, timeout was " << ReadTrimmed(test + ".timeout") << "s.</p>" << endl;
