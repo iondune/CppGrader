@@ -21,8 +21,14 @@ void IndexBuilder::GenerateAssignmentIndex()
 	Cat(TemplateDirectory + "top2.html", File);
 
 	File << "<h1>[CSC 473] Program (" << Assignment << ") Grade Results</h1>" << endl;
+
+	File << "<ul class=\"breadcrumb\">" << endl;
+	File << "<li><a href=\"../.\">Home</a></li>" << endl;
+	File << "<li class=\"active\">Program (" << Assignment << ")</li>" << endl;
+	File << "</ul>" << endl;
+
+
 	File << "<p>Student: " << Student << "</p>" << endl;
-	File << "<p><a href=\"../\">&lt;&lt; Back to All Programs</a></p>" << endl;
 
 	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
 	File << "<thead>" << endl;
@@ -117,7 +123,7 @@ void IndexBuilder::GenerateStudentIndex()
 	for (string const & assignment : assignments)
 	{
 		File << "<tr>" << endl;
-		File << "<td><a href=\"" << assignment << "/\">" << assignment << "</a></td>" << endl;
+		File << "<td><a href=\"" << assignment << "/\">Program (" << assignment << ")</a></td>" << endl;
 
 		fs::create_directories(assignment);
 		fs::current_path(assignment);

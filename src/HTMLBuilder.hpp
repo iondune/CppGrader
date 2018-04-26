@@ -10,7 +10,7 @@ class HTMLBuilder
 
 public:
 
-	HTMLBuilder(string const & student, string const & assignment);
+	HTMLBuilder(string const & student, string const & assignment, string const & hash);
 
 	void Generate();
 
@@ -19,6 +19,7 @@ protected:
 	string Student;
 	string Assignment;
 	string Status;
+	string Hash;
 
 	std::ofstream File;
 

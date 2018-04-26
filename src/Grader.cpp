@@ -146,7 +146,7 @@ void Grader::WriteReport()
 	try
 	{
 		fs::current_path(ResultsDirectory);
-		HTMLBuilder hb(student, assignment);
+		HTMLBuilder hb(student, assignment, CurrentHash);
 		hb.Generate();
 		LogFile << "Report created at: " << ResultsDirectory + "report.html" << endl;
 	}

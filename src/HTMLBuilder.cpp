@@ -4,10 +4,11 @@
 #include "Process.hpp"
 
 
-HTMLBuilder::HTMLBuilder(string const & student, string const & assignment)
+HTMLBuilder::HTMLBuilder(string const & student, string const & assignment, string const & hash)
 {
 	this->Student = student;
 	this->Assignment = assignment;
+	this->Hash = hash;
 
 	File.open("report.html");
 }
@@ -38,10 +39,15 @@ void HTMLBuilder::HeaderInfo()
 	Cat(TemplateDirectory + "top2.html", File);
 	File << "<h1>[CSC 473] Program (" << Assignment << ") Grade Results</h1>" << endl;
 
+	File << "<ul class=\"breadcrumb\">" << endl;
+	File << "<li><a href=\"../../\">Home</a></li>" << endl;
+	File << "<li><a href=\"../\">Program (" << Assignment << ")</a></li>" << endl;
+	File << "<li class=\"active\">Commit (" << Hash << ")</li>" << endl;
+	File << "</ul>" << endl;
+
 	File << "<p>Student: " << Student << "</p>" << endl;
 
 	File << "<p>Grade Time/Date: " << EscapeHTML(ReadTrimmed("last_run")) << "</p>" << endl;
-	File << "<p><a href=\"../\">&lt;&lt; Back to Commit Grade History</a></p>" << endl;
 
 	File << "<p><span>Current Commit:</span></p>" << endl;
 	File << "<pre><code>";
