@@ -1023,7 +1023,7 @@ int Popen::wait() throw(OSError) {
   }
   if (WIFEXITED(status)) return retcode_ = WEXITSTATUS(status);
   if (WIFSIGNALED(status))
-    return retcode_ = WTERMSIG(status);
+    return retcode_ = 1000 + WTERMSIG(status);
   else
     return retcode_ = 255;
 
@@ -1040,7 +1040,7 @@ int Popen::poll() throw(OSError) {
 
   if (ret == child_pid_) {
     if (WIFSIGNALED(status)) {
-      retcode_ = WTERMSIG(status);
+      retcode_ = 1000 + WTERMSIG(status);
     } else if (WIFEXITED(status)) {
       retcode_ = WEXITSTATUS(status);
     } else {

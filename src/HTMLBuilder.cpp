@@ -200,6 +200,7 @@ void HTMLBuilder::ImageTests()
 		File << "<tr><td>" << test << "</td><td>" << endl;
 
 		string const ImageFile = "my"s + test + ".png";
+		string const SignalFile = "my"s + test + ".signal";
 
 		string const test_status = ReadTrimmed("my"s + test + ".status");
 		string type = "danger";
@@ -229,6 +230,11 @@ void HTMLBuilder::ImageTests()
 		if (fs::is_regular_file("my"s + test + ".args"))
 		{
 			File << "<p>Arguments:</p><p><pre><code>" << ReadTrimmed("my"s + test + ".args") << "</code></pre></p>" << endl;
+		}
+
+		if (fs::is_regular_file(SignalFile))
+		{
+			File << "<p><span class=\"text-danger\">Process terminated by signal.</span></p>" << endl;
 		}
 
 		if (! fs::is_regular_file(ImageFile))

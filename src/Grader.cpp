@@ -455,6 +455,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const TimeoutFile = ResultsDirectory + TestName + ".timeout";
 
 	string const MyOutFile = ResultsDirectory + "my" + TestName + ".out";
+	string const MySignalFile = ResultsDirectory + "my" + TestName + ".signal";
 	string const MyDiffFile = ResultsDirectory + "my" + TestName + ".diff";
 	string const MyImageFile = ResultsDirectory + "my" + TestName + ".png";
 	string const MyImageDiffFile = ResultsDirectory + "difference_my" + TestName + ".png";
@@ -464,7 +465,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	string const MyArgsFile = ResultsDirectory + "my" + TestName + ".args";
 
 	LogFile << "Running test '" << TestName << "'" << endl;
-	LogFile << "Currently in:" << endl;
+	LogFile << "- Currently in: ";
 	required_command({"pwd"}, LogFile);
 
 	if (test.Required)
@@ -475,7 +476,6 @@ ETestStatus Grader::DoTest(Test const & test)
 
 	vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
 	Args.insert(Args.begin(), fs::current_path().string() + "/raytrace");
-	Args.insert(Args.begin(), "unbuffer");
 	LogFile << "- Args are:";
 	for (string & Arg : Args)
 	{
@@ -490,22 +490,66 @@ ETestStatus Grader::DoTest(Test const & test)
 		fs::remove("output.png");
 	}
 
+	sp::environment test_environment = sp::environment{{
+		{ "LIBC_FATAL_STDERR_", "1" },
+	}};
+
 	float CommandDuration = 0;
-	ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout, CommandDuration);
+	ECommandStatus const CommandStatus = try_command_redirect_timeout(Args, MyOutFile, Timeout, CommandDuration, std::move(test_environment));
 	WriteToFile(MyDurationFile, FloatToString(CommandDuration));
 
-	if (CommandStatus == ECommandStatus::Timeout)
+	switch (CommandStatus)
 	{
+	case ECommandStatus::Timeout:
 		LogFile << "- Timeout occurred." << endl;
 		TestStatus = ETestStatus::Timeout;
-	}
-	else if (CommandStatus == ECommandStatus::Failure)
-	{
+		break;
+
+	case ECommandStatus::Failure:
 		LogFile << "- Test failed." << endl;
-	}
-	else if (CommandStatus == ECommandStatus::Success)
+		break;
+
+	case ECommandStatus::Signal:
+	case ECommandStatus::Segfault:
 	{
+		if (CommandStatus == ECommandStatus::Signal)
+		{
+			LogFile << "- Test signalled." << endl;
+		}
+		else
+		{
+			LogFile << "- Test segmentation fault." << endl;
+		}
+
+		std::ofstream OutFile(MyOutFile, std::ios_base::app);
+		if (! OutFile.is_open())
+		{
+			throw std::runtime_error(std::string("Can't open file: ") + MyOutFile);
+		}
+		if (CommandStatus == ECommandStatus::Signal)
+		{
+			OutFile << "Terminated by signal." << endl;
+		}
+		else
+		{
+			OutFile << "Segmentation fault (core dumped)" << endl;
+		}
+		OutFile.close();
+
+		std::ofstream SignalFile(MySignalFile);
+		if (! SignalFile.is_open())
+		{
+			throw std::runtime_error(std::string("Can't open file: ") + MySignalFile);
+		}
+		SignalFile << endl;
+		SignalFile.close();
+
+		break;
+	}
+
+	case ECommandStatus::Success:
 		LogFile << "- Test executed." << endl;
+		break;
 	}
 
 	if (test.Type == ETestType::Text)

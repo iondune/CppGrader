@@ -82,6 +82,8 @@ enum class ECommandStatus
 {
 	Success,
 	Failure,
+	Signal,
+	Segfault,
 	Timeout
 };
 
@@ -123,6 +125,10 @@ ECommandStatus try_command_redirect_timeout(std::vector<string> const & cmd, str
 
 	if (retcode)
 	{
+		if (retcode > 1000)
+		{
+			return retcode == 1011 ? ECommandStatus::Segfault : ECommandStatus::Signal;
+		}
 		return ECommandStatus::Failure;
 	}
 	else
