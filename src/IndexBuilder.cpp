@@ -28,7 +28,7 @@ void IndexBuilder::GenerateAssignmentIndex()
 	File << "</ul>" << endl;
 
 
-	File << "<p>Student: " << Student << "</p>" << endl;
+	File << "<p><strong>Student:</strong> " << Student << "</p>" << endl;
 
 	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
 	File << "<thead>" << endl;
@@ -77,7 +77,26 @@ void IndexBuilder::GenerateAssignmentIndex()
 		}
 		File << "</td>" << endl;
 
-		File << "<td>" << Commit.DateString << "</td>" << endl;
+		string const deadline = ReadAsString(ExecDirectory + "deadlines/" + Assignment);
+		struct tm time = { 0 };
+		if (nullptr == strptime(deadline.c_str(), "%m/%d/%Y", &time))
+		{
+			cerr << "Failed to parse time '" << deadline << "'" << endl;
+		}
+		time_t deadline_t = mktime(&time);
+		deadline_t += 60 * 60 * 3;
+		deadline_t += 60 * 60 * 24;
+
+		File << "<td>" << Commit.DateString << " ";
+		if (deadline_t < Commit.Date)
+		{
+			File << "<span class=\"text-danger\">(late " << (Commit.Date - deadline_t + (60 * 60 * 24)) / (60 * 60 * 24) << " days)</span>";
+		}
+		else
+		{
+			File << "<span class=\"text-success\">(on-time)</span>";
+		}
+		File << "</td>" << endl;
 
 		File << "</tr>" << endl;
 	}
@@ -102,7 +121,7 @@ void IndexBuilder::GenerateStudentIndex()
 	Cat(TemplateDirectory + "top2.html", File);
 	File << "<h1>[CSC 473] All Program Grade Results</h1>" << endl;
 
-	File << "<p>Student: " << Student << "</p>" << endl;
+	File << "<p><strong>Student:</strong> " << Student << "</p>" << endl;
 
 	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
 	File << "<thead>" << endl;
