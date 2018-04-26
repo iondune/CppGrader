@@ -45,11 +45,11 @@ void HTMLBuilder::HeaderInfo()
 	File << "<li class=\"active\">Commit (" << Hash << ")</li>" << endl;
 	File << "</ul>" << endl;
 
-	File << "<p>Student: " << Student << "</p>" << endl;
+	File << "<p><strong>Student:</strong> " << Student << "</p>" << endl;
 
-	File << "<p>Grade Time/Date: " << EscapeHTML(ReadTrimmed("last_run")) << "</p>" << endl;
+	File << "<p><strong>Grade Time/Date:</strong> " << EscapeHTML(ReadTrimmed("last_run")) << "</p>" << endl;
 
-	File << "<p><span>Current Commit:</span></p>" << endl;
+	File << "<p><strong>Current Commit:</strong> " << Hash << "</p>" << endl;
 	File << "<pre><code>";
 	File << EscapeHTML(ReadTrimmed("current_commit")) << endl;
 	File << "</code></pre>" << endl;
@@ -59,6 +59,10 @@ void HTMLBuilder::HeaderInfo()
 	File << EscapeHTML(ReadTrimmed("directory_listing"));
 	File << "</code></pre>" << endl;
 	ModalWindowEnd();
+
+	string const repo = ReadAsString(AllStudentsDirectory + Student + "/" + "link");
+	File << "<a class=\"btn btn-info btn-sm\" href=\"" << repo << "\">" << "Repository" << "</a>" << endl;
+	File << "<a class=\"btn btn-info btn-sm\" href=\"" << repo << "/commit/" << Hash << "\">" << "Commit" << "</a>" << endl;
 }
 
 bool HTMLBuilder::BuildInfo()
