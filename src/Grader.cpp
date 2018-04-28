@@ -565,6 +565,9 @@ ETestStatus Grader::DoTest(Test const & test)
 			LogFile << "- Diff failed." << endl;
 		}
 
+		TrimFile(MyOutFile);
+		TrimFile(MyDiffFile);
+
 		if (CommandStatus == ECommandStatus::Success && DiffSucess)
 		{
 			TestStatus = ETestStatus::Pass;
@@ -572,15 +575,7 @@ ETestStatus Grader::DoTest(Test const & test)
 	}
 	else if (test.Type == ETestType::Image)
 	{
-		string const TrimBytes = "16384";
-		string TrimmedLog = required_command_output({"head", "--bytes=" + TrimBytes, MyOutFile});
-		std::ofstream TrimmedLogFile(MyOutFile);
-		if (! TrimmedLogFile.is_open())
-		{
-			throw std::runtime_error(std::string("Can't open file: ") + MyOutFile);
-		}
-		TrimmedLogFile << TrimmedLog;
-		TrimmedLogFile.close();
+		TrimFile(MyOutFile);
 
 		if (fs::is_regular_file("output.png"))
 		{
@@ -626,4 +621,18 @@ ETestStatus Grader::DoTest(Test const & test)
 	}
 
 	return TestStatus;
+}
+
+void Grader::TrimFile(string const & FileName)
+{
+	string const TrimBytes = "16384";
+
+	string TrimmedContents = required_command_output({"head", "--bytes=" + TrimBytes, FileName});
+	std::ofstream TrimmedFile(FileName);
+	if (! TrimmedFile.is_open())
+	{
+		throw std::runtime_error(std::string("Can't open file: ") + FileName);
+	}
+	TrimmedFile << TrimmedContents;
+	TrimmedFile.close();
 }

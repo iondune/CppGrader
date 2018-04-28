@@ -68,5 +68,6 @@ protected:
 	void DoGitUpdate();
 	void CheckForSingleDirectory();
 	ETestStatus DoTest(Test const & test);
+	void TrimFile(string const & FileName);
 
 };
