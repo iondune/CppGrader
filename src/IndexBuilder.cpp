@@ -155,11 +155,19 @@ void IndexBuilder::GenerateStudentIndex()
 
 		if (Commits.size())
 		{
-			CommitInfo const Commit = Commits.front();
+			CommitInfo const * Commit = & Commits.front();
 
-			hash = Commit.Hash;
-			status = Commit.Status;
-			date = Commit.DateString;
+			for (CommitInfo const & C : Commits)
+			{
+				if (std::find(C.Tags.begin(), C.Tags.end(), assignment) != C.Tags.end())
+				{
+					Commit = & C;
+				}
+			}
+
+			hash = Commit->Hash;
+			status = Commit->Status;
+			date = Commit->DateString;
 		}
 
 		File << "<td>";
