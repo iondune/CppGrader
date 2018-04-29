@@ -276,6 +276,7 @@ void Grader::RunBuild()
 	{
 		vector<string> Args;
 		Args.push_back("gcc");
+		Args.push_back("--std=c++14");
 
 		vector<fs::path> cppfiles = FindAllWithExtension(".", "cpp");
 
