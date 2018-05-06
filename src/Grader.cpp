@@ -254,7 +254,7 @@ void Grader::RunBuild()
 		RemoveIfExists("CMakeCache.txt");
 
 		LogFile << "Starting cmake ..." << endl;
-		if (! try_command_redirect({"/usr/local/bin/cmake", ".."}, ResultsDirectory + "cmake_output", std::move(build_environment)))
+		if (! try_command_redirect({"/usr/local/bin/cmake", "-DCMAKE_BUILD_TYPE=Release", ".."}, ResultsDirectory + "cmake_output", std::move(build_environment)))
 		{
 			throw build_exception("CMake build failed.");
 		}
@@ -277,6 +277,7 @@ void Grader::RunBuild()
 		vector<string> Args;
 		Args.push_back("g++");
 		Args.push_back("--std=c++14");
+		Args.push_back("-O3");
 
 		vector<fs::path> cppfiles = FindAllWithExtension(".", "cpp");
 
