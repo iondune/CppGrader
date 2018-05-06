@@ -275,7 +275,7 @@ void Grader::RunBuild()
 	else if (BuildType == EBuildType::Auto)
 	{
 		vector<string> Args;
-		Args.push_back("gcc");
+		Args.push_back("g++");
 		Args.push_back("--std=c++14");
 
 		vector<fs::path> cppfiles = FindAllWithExtension(".", "cpp");
@@ -292,7 +292,7 @@ void Grader::RunBuild()
 		}
 		Args.push_back("-O3");
 		Args.push_back("-o");
-		Args.push_back("raytrace");
+		Args.push_back("build/raytrace");
 
 		LogFile << "- Args are:";
 		for (string const & Arg : Args)
@@ -305,6 +305,8 @@ void Grader::RunBuild()
 		{
 			throw build_exception("gcc build failed.");
 		}
+
+		fs::current_path("build");
 	}
 
 	if (! fs::is_regular_file("raytrace"))
