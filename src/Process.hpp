@@ -49,6 +49,15 @@ bool try_command(std::initializer_list<string> const & cmd, std::ostream & strea
 }
 
 template <typename... Args>
+std::pair<bool, string> try_command_output(std::initializer_list<string> const & cmd, Args&&... args)
+{
+	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);
+	auto res = p.communicate();
+	auto retcode = p.retcode();
+	return std::make_pair(retcode == 0, res.first.buf.data());
+}
+
+template <typename... Args>
 string required_command_output(std::initializer_list<string> const & cmd, Args&&... args)
 {
 	auto p = sp::Popen(cmd, sp::output{sp::PIPE},  sp::error{sp::STDOUT}, std::forward<Args>(args)...);

@@ -27,6 +27,7 @@ protected:
 	bool BuildInfo();
 	void TextTests();
 	void ImageTests();
+	void AdditionalImages();
 
 	void Cleanup();
 

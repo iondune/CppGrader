@@ -27,6 +27,9 @@ void HTMLBuilder::Generate()
 
 		File << "<h2>Image Tests</h2>" << endl;
 		ImageTests();
+
+		File << "<h2>Additional Images</h2>" << endl;
+		AdditionalImages();
 	}
 
 	Cleanup();
@@ -282,6 +285,42 @@ void HTMLBuilder::ImageTests()
 		File << EscapeHTML(ReadTrimmed("my"s + test + ".out"));
 		File << "</code></pre>" << endl;
 		ModalWindowEnd();
+
+		File << "</td></tr>" << endl;
+	}
+
+	File << "</tbody></table>" << endl;
+}
+
+void HTMLBuilder::AdditionalImages()
+{
+	vector<string> Tests = ReadAsLines("additional_index");
+
+	if (! Tests.size())
+		return;
+
+	File << "<table class=\"table table-striped table-bordered\" style=\"width: auto;\">" << endl;
+	File << "<thead>" << endl;
+	File << "<tr>" << endl;
+	File << "<th>File</th>" << endl;
+	File << "<th>Results</th>" << endl;
+	File << "</tr>" << endl;
+	File << "</thead>" << endl;
+	File << "<tbody>" << endl;
+
+	for (auto test : Tests)
+	{
+		File << "<tr><td>" << test << "</td><td>" << endl;
+
+		string const ImageFile = "my"s + test + ".png";
+		if (! fs::is_regular_file(ImageFile))
+		{
+			File << "<p><span class=\"text-danger\">Image for " << test << ".pov failed - no image produced.</span></p>" << endl;
+		}
+		else
+		{
+			File << "<img src=\"my" << test << ".png" << "\"             alt=\"rendered\"   id=\"" << test << "_image1\" class=\"image-toggle\" />" << endl;
+		}
 
 		File << "</td></tr>" << endl;
 	}

@@ -322,6 +322,7 @@ bool Grader::RunTests()
 
 	std::stringstream TestIndex;
 	std::stringstream ImageIndex;
+	std::stringstream AdditionalIndex;
 
 	LogFile << "Running Tests" << endl;
 	LogFile << "=============" << endl;
@@ -340,11 +341,16 @@ bool Grader::RunTests()
 		{
 			ImageIndex << test.Name << endl;
 		}
+		else if (test.Type == ETestType::Additional)
+		{
+			AdditionalIndex << test.Name << endl;
+		}
 	}
 	LogFile << endl;
 
 	WriteToFile(ResultsDirectory + "tests_index", TestIndex.str());
 	WriteToFile(ResultsDirectory + "image_index", ImageIndex.str());
+	WriteToFile(ResultsDirectory + "additional_index", AdditionalIndex.str());
 
 	if (AllTestsPassed)
 	{
@@ -478,8 +484,30 @@ ETestStatus Grader::DoTest(Test const & test)
 	}
 	WriteToFile(TimeoutFile, FloatToString(test.Timeout));
 
-	vector<string> Args = Explode(ReadAsString(ArgsFile), ' ');
-	Args.insert(Args.begin(), fs::current_path().string() + "/raytrace");
+	vector<string> Args;
+
+	if (test.Type == ETestType::Additional)
+	{
+		auto find = try_command_output({"find", "..", "-name", TestName + ".pov", "-print", "-quit"});
+
+		if (find.first)
+		{
+			try_command({"cp", TrimWhitespace(find.second), "."}, LogFile);
+		}
+
+		Args.push_back(fs::current_path().string() + "/raytrace");
+		Args.push_back("render");
+		Args.push_back(TestName + ".pov");
+		Args.push_back("640");
+		Args.push_back("480");
+	}
+	else
+	{
+		Args = Explode(ReadAsString(ArgsFile), ' ');
+		Args.insert(Args.begin(), fs::current_path().string() + "/raytrace");
+		required_command({"cp", ArgsFile, MyArgsFile}, LogFile);
+	}
+
 	LogFile << "- Args are:";
 	for (string & Arg : Args)
 	{
@@ -487,7 +515,6 @@ ETestStatus Grader::DoTest(Test const & test)
 		LogFile << " '" << Arg << "'";
 	}
 	LogFile << endl;
-	required_command({"cp", ArgsFile, MyArgsFile}, LogFile);
 
 	if (fs::is_regular_file("output.png"))
 	{
@@ -604,6 +631,20 @@ ETestStatus Grader::DoTest(Test const & test)
 			{
 				TestStatus = ETestStatus::Pass;
 			}
+		}
+		else
+		{
+			LogFile << "- No image produced." << endl;
+		}
+	}
+	else if (test.Type == ETestType::Additional)
+	{
+		TrimFile(MyOutFile);
+
+		if (fs::is_regular_file("output.png"))
+		{
+			required_command({"mv", "output.png", MyImageFile}, LogFile);
+			TestStatus = ETestStatus::Pass;
 		}
 		else
 		{

@@ -17,12 +17,23 @@ void from_json(nlohmann::json const & j, Test & t)
 	{
 		t.Type = ETestType::Image;
 	}
+	else if (type == "additional")
+	{
+		t.Type = ETestType::Additional;
+	}
 	else
 	{
 		throw std::runtime_error("could not parse test type: "s + type);
 	}
 
-	t.Required = j.at("required").get<bool>();
+	if (t.Type == ETestType::Additional)
+	{
+		t.Required = false;
+	}
+	else
+	{
+		t.Required = j.at("required").get<bool>();
+	}
 
 	try
 	{

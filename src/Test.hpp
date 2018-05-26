@@ -7,8 +7,14 @@
 
 enum class ETestType
 {
+	//! Textual diff
 	Text,
-	Image
+
+	//! Image diff
+	Image,
+
+	//! User-provided .pov, not diffed
+	Additional
 };
 
 struct Test
