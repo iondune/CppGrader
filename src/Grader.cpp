@@ -500,6 +500,11 @@ ETestStatus Grader::DoTest(Test const & test)
 		Args.push_back(TestName + ".pov");
 		Args.push_back("640");
 		Args.push_back("480");
+
+		if (TestName == "takehome")
+		{
+			Args.push_back("-gi");
+		}
 	}
 	else
 	{
@@ -608,6 +613,11 @@ ETestStatus Grader::DoTest(Test const & test)
 	{
 		TrimFile(MyOutFile);
 
+		if (fs::is_regular_file("out.png"))
+		{
+			required_command({"mv", "out.png", "output.png"}, LogFile);
+		}
+
 		if (fs::is_regular_file("output.png"))
 		{
 			required_command({"mv", "output.png", MyImageFile}, LogFile);
@@ -640,6 +650,11 @@ ETestStatus Grader::DoTest(Test const & test)
 	else if (test.Type == ETestType::Additional)
 	{
 		TrimFile(MyOutFile);
+
+		if (fs::is_regular_file("out.png"))
+		{
+			required_command({"mv", "out.png", "output.png"}, LogFile);
+		}
 
 		if (fs::is_regular_file("output.png"))
 		{
